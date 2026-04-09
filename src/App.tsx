@@ -8,6 +8,7 @@ import Explore from "./pages/Explore";
 import BarDetail from "./pages/BarDetail";
 import Networking from "./pages/Networking";
 import Chat from "./pages/Chat";
+import ChatRoom from "./pages/ChatRoom";
 import MyPage from "./pages/MyPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/bar/:id" element={<BarDetail />} />
           <Route path="/networking" element={<Networking />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/chat/:roomId" element={<ChatRoom />} />
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
