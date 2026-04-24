@@ -3,7 +3,8 @@ import { sampleBars } from "@/data/mockData";
 import BarCard from "@/components/BarCard";
 import SearchFilterBar from "@/components/SearchFilterBar";
 import BottomNav from "@/components/BottomNav";
-import { Wine } from "lucide-react";
+import AISearchPanel from "@/components/AISearchPanel";
+import { Wine, Sparkles } from "lucide-react";
 
 const Explore = () => {
   const [selectedArea, setSelectedArea] = useState("전체");
@@ -11,8 +12,15 @@ const Explore = () => {
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [aiBarIds, setAiBarIds] = useState<string[]>([]);
 
   const filteredBars = useMemo(() => {
+    if (aiBarIds.length > 0) {
+      const ordered = aiBarIds
+        .map((id) => sampleBars.find((b) => b.id === id))
+        .filter((b): b is (typeof sampleBars)[number] => Boolean(b));
+      return ordered;
+    }
     return sampleBars.filter((bar) => {
       if (selectedArea !== "전체" && bar.area !== selectedArea) return false;
       if (selectedDrink !== "전체" && !bar.category.includes(selectedDrink) && !bar.tags.some(t => t.includes(selectedDrink))) return false;
@@ -23,7 +31,7 @@ const Explore = () => {
       }
       return true;
     });
-  }, [selectedArea, selectedDrink, selectedMoods, searchQuery]);
+  }, [selectedArea, selectedDrink, selectedMoods, searchQuery, aiBarIds]);
 
   const handleMoodToggle = (mood: string) => {
     setSelectedMoods(prev => prev.includes(mood) ? prev.filter(m => m !== mood) : [...prev, mood]);
@@ -53,12 +61,24 @@ const Explore = () => {
       </header>
 
       {/* Results */}
-      <main className="px-4 py-4 max-w-lg mx-auto">
+      <main className="px-4 py-4 max-w-lg mx-auto space-y-4">
+        {/* AI Search Panel */}
+        <AISearchPanel onApply={setAiBarIds} />
+
         {/* Section title */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            {selectedArea === "전체" ? "오늘의 혼술 추천" : `${selectedArea} 추천 바`}
-            <span className="ml-2 text-primary">{filteredBars.length}</span>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+            {aiBarIds.length > 0 ? (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                AI 추천 결과
+              </>
+            ) : selectedArea === "전체" ? (
+              "오늘의 혼술 추천"
+            ) : (
+              `${selectedArea} 추천 바`
+            )}
+            <span className="ml-1 text-primary">{filteredBars.length}</span>
           </h2>
         </div>
 
