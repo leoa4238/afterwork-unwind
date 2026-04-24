@@ -31,7 +31,7 @@ const Explore = () => {
       }
       return true;
     });
-  }, [selectedArea, selectedDrink, selectedMoods, searchQuery]);
+  }, [selectedArea, selectedDrink, selectedMoods, searchQuery, aiBarIds]);
 
   const handleMoodToggle = (mood: string) => {
     setSelectedMoods(prev => prev.includes(mood) ? prev.filter(m => m !== mood) : [...prev, mood]);
