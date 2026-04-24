@@ -61,12 +61,24 @@ const Explore = () => {
       </header>
 
       {/* Results */}
-      <main className="px-4 py-4 max-w-lg mx-auto">
+      <main className="px-4 py-4 max-w-lg mx-auto space-y-4">
+        {/* AI Search Panel */}
+        <AISearchPanel onApply={setAiBarIds} />
+
         {/* Section title */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            {selectedArea === "전체" ? "오늘의 혼술 추천" : `${selectedArea} 추천 바`}
-            <span className="ml-2 text-primary">{filteredBars.length}</span>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+            {aiBarIds.length > 0 ? (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                AI 추천 결과
+              </>
+            ) : selectedArea === "전체" ? (
+              "오늘의 혼술 추천"
+            ) : (
+              `${selectedArea} 추천 바`
+            )}
+            <span className="ml-1 text-primary">{filteredBars.length}</span>
           </h2>
         </div>
 
