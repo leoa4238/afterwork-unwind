@@ -3,7 +3,8 @@ import { sampleBars } from "@/data/mockData";
 import BarCard from "@/components/BarCard";
 import SearchFilterBar from "@/components/SearchFilterBar";
 import BottomNav from "@/components/BottomNav";
-import { Wine } from "lucide-react";
+import AISearchPanel from "@/components/AISearchPanel";
+import { Wine, Sparkles } from "lucide-react";
 
 const Explore = () => {
   const [selectedArea, setSelectedArea] = useState("전체");
@@ -11,8 +12,15 @@ const Explore = () => {
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [aiBarIds, setAiBarIds] = useState<string[]>([]);
 
   const filteredBars = useMemo(() => {
+    if (aiBarIds.length > 0) {
+      const ordered = aiBarIds
+        .map((id) => sampleBars.find((b) => b.id === id))
+        .filter((b): b is (typeof sampleBars)[number] => Boolean(b));
+      return ordered;
+    }
     return sampleBars.filter((bar) => {
       if (selectedArea !== "전체" && bar.area !== selectedArea) return false;
       if (selectedDrink !== "전체" && !bar.category.includes(selectedDrink) && !bar.tags.some(t => t.includes(selectedDrink))) return false;
