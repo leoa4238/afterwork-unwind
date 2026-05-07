@@ -1,4 +1,4 @@
-import { Wine, MapPin, Star, Heart, Clock } from "lucide-react";
+import { Wine, MapPin, Star, Heart, Clock, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { type Bar } from "@/data/mockData";
 import { Link } from "react-router-dom";
@@ -24,12 +24,22 @@ const barImages: Record<string, string> = {
 
 interface BarCardProps {
   bar: Bar;
+  aiMatch?: { score: number; reason: string; rank?: number };
 }
 
-const BarCard = ({ bar }: BarCardProps) => {
+const BarCard = ({ bar, aiMatch }: BarCardProps) => {
   return (
     <Link to={`/bar/${bar.id}`} className="block group">
-      <div className="bg-gradient-card rounded-xl overflow-hidden border border-border shadow-card hover:shadow-glow transition-all duration-300 hover:border-primary/30">
+      <div className={`bg-gradient-card rounded-xl overflow-hidden border shadow-card hover:shadow-glow transition-all duration-300 ${aiMatch ? "border-primary/50 ring-1 ring-primary/30" : "border-border hover:border-primary/30"}`}>
+        {aiMatch && (
+          <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border-b border-primary/20">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary">
+              <Sparkles className="w-3 h-3" />
+              {aiMatch.rank ? `AI 추천 #${aiMatch.rank}` : "AI 추천"}
+              <span className="text-foreground/80">· 매칭 {aiMatch.score}%</span>
+            </div>
+          </div>
+        )}
         {/* Image */}
         <div className="relative h-44 overflow-hidden">
           <img
@@ -99,10 +109,19 @@ const BarCard = ({ bar }: BarCardProps) => {
             ))}
           </div>
 
-          {/* AI Summary */}
-          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-            ✨ {bar.aiSummary}
-          </p>
+          {/* AI Summary or Match Reason */}
+          {aiMatch ? (
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-2.5">
+              <p className="text-xs text-foreground/90 leading-relaxed line-clamp-2">
+                <Sparkles className="inline w-3 h-3 text-primary mr-1" />
+                <span className="text-primary font-medium">AI:</span> {aiMatch.reason}
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+              ✨ {bar.aiSummary}
+            </p>
+          )}
         </div>
       </div>
     </Link>
