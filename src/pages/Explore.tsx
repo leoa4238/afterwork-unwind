@@ -4,7 +4,12 @@ import BarCard from "@/components/BarCard";
 import SearchFilterBar from "@/components/SearchFilterBar";
 import BottomNav from "@/components/BottomNav";
 import AISearchPanel from "@/components/AISearchPanel";
+import AIConcierge from "@/components/AIConcierge";
 import { Wine, Sparkles } from "lucide-react";
+
+export interface AiMatchMap {
+  [barId: string]: { score: number; reason: string; rank: number };
+}
 
 const Explore = () => {
   const [selectedArea, setSelectedArea] = useState("전체");
@@ -12,14 +17,15 @@ const Explore = () => {
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [aiBarIds, setAiBarIds] = useState<string[]>([]);
+  const [aiMatches, setAiMatches] = useState<AiMatchMap>({});
+
+  const aiBarIds = Object.keys(aiMatches);
 
   const filteredBars = useMemo(() => {
     if (aiBarIds.length > 0) {
-      const ordered = aiBarIds
+      return aiBarIds
         .map((id) => sampleBars.find((b) => b.id === id))
         .filter((b): b is (typeof sampleBars)[number] => Boolean(b));
-      return ordered;
     }
     return sampleBars.filter((bar) => {
       if (selectedArea !== "전체" && bar.area !== selectedArea) return false;
@@ -39,7 +45,6 @@ const Explore = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <header className="sticky top-0 z-40 glass border-b border-border px-4 pt-4 pb-3">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-3">
@@ -60,12 +65,9 @@ const Explore = () => {
         </div>
       </header>
 
-      {/* Results */}
       <main className="px-4 py-4 max-w-lg mx-auto space-y-4">
-        {/* AI Search Panel */}
-        <AISearchPanel onApply={setAiBarIds} />
+        <AISearchPanel onApply={setAiMatches} />
 
-        {/* Section title */}
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
             {aiBarIds.length > 0 ? (
@@ -82,12 +84,11 @@ const Explore = () => {
           </h2>
         </div>
 
-        {/* Bar list */}
         {filteredBars.length > 0 ? (
           <div className="space-y-4">
             {filteredBars.map((bar, i) => (
               <div key={bar.id} className="animate-slide-up" style={{ animationDelay: `${i * 0.1}s` }}>
-                <BarCard bar={bar} />
+                <BarCard bar={bar} aiMatch={aiMatches[bar.id]} />
               </div>
             ))}
           </div>
@@ -95,11 +96,11 @@ const Explore = () => {
           <div className="text-center py-20">
             <Wine className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">조건에 맞는 바가 없습니다</p>
-            <p className="text-xs text-muted-foreground mt-1">필터를 변경해보세요</p>
           </div>
         )}
       </main>
 
+      <AIConcierge />
       <BottomNav />
     </div>
   );
