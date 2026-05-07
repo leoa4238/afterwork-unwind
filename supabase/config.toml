@@ -2,3 +2,12 @@ project_id = "jlkbycsqmygolunebzim"
 
 [functions.ai-recommend]
 verify_jwt = false
+
+[functions.ai-bar-detail]
+verify_jwt = false
+
+[functions.ai-match-network]
+verify_jwt = false
+
+[functions.ai-concierge]
+verify_jwt = false

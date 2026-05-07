@@ -4,6 +4,7 @@ import { ArrowLeft, Heart, MapPin, Star, Clock, Wine, Users, Sparkles, Share2 } 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import BottomNav from "@/components/BottomNav";
+import BarAIInsights from "@/components/BarAIInsights";
 
 import barWhiskey from "@/assets/bar-whiskey.jpg";
 import barWine from "@/assets/bar-wine.jpg";
@@ -106,11 +107,14 @@ const BarDetail = () => {
           ))}
         </div>
 
-        {/* AI Summary */}
-        <div className="bg-gradient-card rounded-xl p-4 border border-primary/20">
+        {/* AI Insights (live) */}
+        <BarAIInsights bar={bar} />
+
+        {/* Static AI Summary */}
+        <div className="bg-gradient-card rounded-xl p-4 border border-border">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">AI 리뷰 요약</span>
+            <span className="text-sm font-medium text-foreground">리뷰 한줄 요약</span>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">{bar.aiSummary}</p>
         </div>

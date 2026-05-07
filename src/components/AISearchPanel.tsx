@@ -18,7 +18,7 @@ interface AIResult {
 }
 
 interface AISearchPanelProps {
-  onApply?: (barIds: string[]) => void;
+  onApply?: (matches: Record<string, { score: number; reason: string; rank: number }>) => void;
 }
 
 const EXAMPLE_QUERIES = [
@@ -43,7 +43,11 @@ const AISearchPanel = ({ onApply }: AISearchPanelProps) => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setResult(data as AIResult);
-      onApply?.((data as AIResult).recommendations.map((r) => r.bar_id));
+      const map: Record<string, { score: number; reason: string; rank: number }> = {};
+      (data as AIResult).recommendations.forEach((r, idx) => {
+        map[r.bar_id] = { score: r.match_score, reason: r.reason, rank: idx + 1 };
+      });
+      onApply?.(map);
     } catch (e) {
       console.error(e);
       toast({
@@ -59,7 +63,7 @@ const AISearchPanel = ({ onApply }: AISearchPanelProps) => {
   const reset = () => {
     setResult(null);
     setQuery("");
-    onApply?.([]);
+    onApply?.({});
   };
 
   return (

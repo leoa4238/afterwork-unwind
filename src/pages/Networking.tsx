@@ -1,15 +1,27 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { sampleNetworkingUsers } from "@/data/mockData";
-import { Users, MessageCircle, Shield, MapPin } from "lucide-react";
+import { Users, MessageCircle, Shield, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import BottomNav from "@/components/BottomNav";
+import NetworkingAIMatch from "@/components/NetworkingAIMatch";
 
 const Networking = () => {
   const [networkingOn, setNetworkingOn] = useState(false);
+  const [aiMatches, setAiMatches] = useState<Record<string, { score: number; reason: string }>>({});
 
   const availableUsers = sampleNetworkingUsers.filter((u) => u.availableNow);
+
+  const orderedUsers = useMemo(() => {
+    const ids = Object.keys(aiMatches);
+    if (ids.length === 0) return availableUsers;
+    const matched = ids
+      .map((id) => availableUsers.find((u) => u.id === id))
+      .filter((u): u is (typeof availableUsers)[number] => Boolean(u));
+    const rest = availableUsers.filter((u) => !aiMatches[u.id]);
+    return [...matched, ...rest];
+  }, [aiMatches, availableUsers]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -49,41 +61,62 @@ const Networking = () => {
               </p>
             </div>
 
-            <h2 className="text-sm font-medium text-muted-foreground">
-              가볍게 대화 가능한 근처 직장인 <span className="text-primary">{availableUsers.length}</span>
+            <NetworkingAIMatch users={availableUsers} onMatched={setAiMatches} />
+
+            <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+              {Object.keys(aiMatches).length > 0 ? (
+                <><Sparkles className="w-3.5 h-3.5 text-primary" /> AI 매칭 결과</>
+              ) : "가볍게 대화 가능한 근처 직장인"}
+              <span className="ml-1 text-primary">{orderedUsers.length}</span>
             </h2>
 
-            {availableUsers.map((user, i) => (
-              <div
-                key={user.id}
-                className="bg-gradient-card rounded-xl p-4 border border-border shadow-card animate-slide-up"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <div>
-                      <h3 className="font-semibold text-foreground">{user.nickname}</h3>
-                      <p className="text-xs text-muted-foreground">{user.jobGroup} · {user.ageRange}</p>
+            {orderedUsers.map((user, i) => {
+              const m = aiMatches[user.id];
+              return (
+                <div
+                  key={user.id}
+                  className={`rounded-xl p-4 border shadow-card animate-slide-up ${
+                    m ? "bg-gradient-card border-primary/40 ring-1 ring-primary/20" : "bg-gradient-card border-border"
+                  }`}
+                  style={{ animationDelay: `${i * 0.08}s` }}
+                >
+                  {m && (
+                    <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-primary">
+                      <Sparkles className="w-3 h-3" />
+                      AI 매칭 {m.score}%
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3" />
-                      <span>{user.area}</span>
+                  )}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <div>
+                        <h3 className="font-semibold text-foreground">{user.nickname}</h3>
+                        <p className="text-xs text-muted-foreground">{user.jobGroup} · {user.ageRange}</p>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="w-3 h-3" />
+                        <span>{user.area}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {user.talkTopics.map(topic => (
+                          <Badge key={topic} variant="secondary" className="text-xs bg-secondary border-0 text-secondary-foreground">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
+                      {m && (
+                        <p className="text-xs text-foreground/80 leading-relaxed bg-primary/5 border border-primary/20 rounded-md p-2 mt-2">
+                          <span className="text-primary font-medium">AI:</span> {m.reason}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {user.talkTopics.map(topic => (
-                        <Badge key={topic} variant="secondary" className="text-xs bg-secondary border-0 text-secondary-foreground">
-                          {topic}
-                        </Badge>
-                      ))}
-                    </div>
+                    <Button size="sm" variant="default" className="shrink-0">
+                      <MessageCircle className="w-4 h-4" />
+                      대화 요청
+                    </Button>
                   </div>
-                  <Button size="sm" variant="default" className="shrink-0">
-                    <MessageCircle className="w-4 h-4" />
-                    대화 요청
-                  </Button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
