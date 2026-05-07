@@ -29,21 +29,14 @@ const AIConcierge = () => {
     if (!text.trim() || loading) return;
     const userMsg: Msg = { role: "user", content: text };
     const next = [...messages, userMsg];
-    setMessages(next);
+    setMessages([...next, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
 
     let acc = "";
     const upsert = (chunk: string) => {
       acc += chunk;
-      setMessages((prev) => {
-        const last = prev[prev.length - 1];
-        if (last?.role === "assistant" && last.content !== messages[messages.length - 1]?.content) {
-          // already appended, just update last
-          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: acc } : m));
-        }
-        return [...prev, { role: "assistant", content: acc }];
-      });
+      setMessages((prev) => prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: acc } : m)));
     };
 
     try {
@@ -95,7 +88,7 @@ const AIConcierge = () => {
         description: e instanceof Error ? e.message : "잠시 후 다시 시도해주세요.",
         variant: "destructive",
       });
-      setMessages(next);
+      setMessages(messages);
     } finally {
       setLoading(false);
     }
