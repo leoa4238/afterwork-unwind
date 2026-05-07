@@ -131,25 +131,25 @@ const AIConcierge = () => {
 
             {/* Messages */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
-                    m.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-sm"
-                      : "bg-muted text-foreground rounded-bl-sm"
-                  }`}>
-                    {m.content}
+              {messages.map((m, i) => {
+                const isEmptyAssistant = m.role === "assistant" && !m.content;
+                return (
+                  <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
+                        : "bg-muted text-foreground rounded-bl-sm"
+                    }`}>
+                      {isEmptyAssistant ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                          <span className="text-xs text-muted-foreground">생각 중…</span>
+                        </span>
+                      ) : m.content}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {loading && messages[messages.length - 1]?.role === "user" && (
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-2">
-                    <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                    <span className="text-xs text-muted-foreground">생각 중…</span>
-                  </div>
-                </div>
-              )}
+                );
+              })}
             </div>
 
             {/* Suggestions */}
