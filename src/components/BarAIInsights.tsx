@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Sparkles, Loader2, GlassWater, Utensils, Tag, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { sampleBars, type Bar } from "@/data/mockData";
+import type { Bar } from "@/data/mockData";
 
 interface Insight {
   why_today: string;
@@ -12,8 +12,14 @@ interface Insight {
   similar_bars: { bar_id: string; reason: string }[];
 }
 
+interface SimilarBarMeta {
+  id: string;
+  name: string;
+}
+
 const BarAIInsights = ({ bar }: { bar: Bar }) => {
   const [data, setData] = useState<Insight | null>(null);
+  const [allBarsMap, setAllBarsMap] = useState<Record<string, SimilarBarMeta>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,17 +28,56 @@ const BarAIInsights = ({ bar }: { bar: Bar }) => {
     setLoading(true);
     setError(null);
     setData(null);
-    supabase.functions
-      .invoke("ai-bar-detail", { body: { bar, allBars: sampleBars } })
-      .then(({ data: d, error: e }) => {
-        if (cancelled) return;
-        if (e || (d as any)?.error) {
-          setError((d as any)?.error || e?.message || "AI 인사이트 로드 실패");
-        } else {
-          setData(d as Insight);
+
+    (async () => {
+      // 1) Fetch candidate bars from Supabase (real DB) + their tags
+      const { data: bars, error: barsErr } = await supabase
+        .from("bars")
+        .select("id, name, area, category, solo_friendly_score, quiet_score");
+      if (barsErr || !bars) {
+        if (!cancelled) {
+          setError("바 데이터를 불러오지 못했습니다.");
+          setLoading(false);
         }
-      })
-      .finally(() => !cancelled && setLoading(false));
+        return;
+      }
+
+      const { data: tagRows } = await supabase
+        .from("bar_tags")
+        .select("bar_id, tag");
+
+      const tagsByBar: Record<string, string[]> = {};
+      (tagRows || []).forEach((r: any) => {
+        (tagsByBar[r.bar_id] ||= []).push(r.tag);
+      });
+
+      const allBars = bars.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        area: b.area,
+        category: b.category,
+        soloFriendlyScore: b.solo_friendly_score,
+        quietScore: b.quiet_score,
+        tags: tagsByBar[b.id] || [],
+      }));
+
+      const nameMap: Record<string, SimilarBarMeta> = {};
+      allBars.forEach((b) => { nameMap[b.id] = { id: b.id, name: b.name }; });
+      if (!cancelled) setAllBarsMap(nameMap);
+
+      // 2) Call edge function with real DB-backed data
+      const { data: d, error: e } = await supabase.functions.invoke("ai-bar-detail", {
+        body: { bar, allBars },
+      });
+      if (cancelled) return;
+      if (e || (d as any)?.error) {
+        setError((d as any)?.error || e?.message || "AI 인사이트 로드 실패");
+      } else {
+        setData(d as Insight);
+      }
+      setLoading(false);
+    })();
+
     return () => { cancelled = true; };
   }, [bar.id]);
 
@@ -55,7 +100,6 @@ const BarAIInsights = ({ bar }: { bar: Bar }) => {
 
   return (
     <div className="space-y-3">
-      {/* Why today */}
       <div className="bg-gradient-to-br from-primary/15 via-background to-background rounded-xl p-4 border border-primary/30">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-primary" />
@@ -75,7 +119,6 @@ const BarAIInsights = ({ bar }: { bar: Bar }) => {
         )}
       </div>
 
-      {/* Signature drinks */}
       <div className="bg-gradient-card rounded-xl p-4 border border-border">
         <div className="flex items-center gap-2 mb-3">
           <GlassWater className="w-4 h-4 text-primary" />
@@ -94,7 +137,6 @@ const BarAIInsights = ({ bar }: { bar: Bar }) => {
         </div>
       </div>
 
-      {/* Pairings */}
       <div className="bg-gradient-card rounded-xl p-4 border border-border">
         <div className="flex items-center gap-2 mb-2">
           <Utensils className="w-4 h-4 text-primary" />
@@ -110,7 +152,6 @@ const BarAIInsights = ({ bar }: { bar: Bar }) => {
         </ul>
       </div>
 
-      {/* Similar bars */}
       {data.similar_bars?.length > 0 && (
         <div className="bg-gradient-card rounded-xl p-4 border border-border">
           <div className="flex items-center gap-2 mb-3">
@@ -119,7 +160,7 @@ const BarAIInsights = ({ bar }: { bar: Bar }) => {
           </div>
           <div className="space-y-2">
             {data.similar_bars.map((s) => {
-              const b = sampleBars.find((x) => x.id === s.bar_id);
+              const b = allBarsMap[s.bar_id];
               if (!b) return null;
               return (
                 <Link

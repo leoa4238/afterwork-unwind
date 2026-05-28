@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      bar_tags: {
+        Row: {
+          bar_id: string
+          id: string
+          tag: string
+        }
+        Insert: {
+          bar_id: string
+          id?: string
+          tag: string
+        }
+        Update: {
+          bar_id?: string
+          id?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bar_tags_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bars: {
+        Row: {
+          address: string
+          ai_summary: string | null
+          area: string
+          category: string
+          created_at: string
+          distance: string | null
+          id: string
+          image_key: string | null
+          is_open_now: boolean
+          name: string
+          networking_friendly: boolean
+          price_range: string
+          quiet_score: number
+          rating: number
+          review_count: number
+          solo_friendly_score: number
+        }
+        Insert: {
+          address: string
+          ai_summary?: string | null
+          area: string
+          category: string
+          created_at?: string
+          distance?: string | null
+          id: string
+          image_key?: string | null
+          is_open_now?: boolean
+          name: string
+          networking_friendly?: boolean
+          price_range: string
+          quiet_score?: number
+          rating?: number
+          review_count?: number
+          solo_friendly_score?: number
+        }
+        Update: {
+          address?: string
+          ai_summary?: string | null
+          area?: string
+          category?: string
+          created_at?: string
+          distance?: string | null
+          id?: string
+          image_key?: string | null
+          is_open_now?: boolean
+          name?: string
+          networking_friendly?: boolean
+          price_range?: string
+          quiet_score?: number
+          rating?: number
+          review_count?: number
+          solo_friendly_score?: number
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -72,6 +155,44 @@ export type Database = {
           user2_id?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          bar_id: string
+          content: string
+          created_at: string
+          id: string
+          rating: number
+          user_id: string | null
+          user_name: string
+        }
+        Insert: {
+          bar_id: string
+          content: string
+          created_at?: string
+          id?: string
+          rating: number
+          user_id?: string | null
+          user_name: string
+        }
+        Update: {
+          bar_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          user_id?: string | null
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_bar_id_fkey"
+            columns: ["bar_id"]
+            isOneToOne: false
+            referencedRelation: "bars"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
