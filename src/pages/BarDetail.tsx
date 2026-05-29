@@ -6,6 +6,7 @@ import { ArrowLeft, Heart, MapPin, Star, Clock, Wine, Users, Sparkles, Share2, L
 import { Badge } from "@/components/ui/badge";
 import BottomNav from "@/components/BottomNav";
 import BarAIInsights from "@/components/BarAIInsights";
+import ReviewForm from "@/components/ReviewForm";
 
 import barWhiskey from "@/assets/bar-whiskey.jpg";
 import barWine from "@/assets/bar-wine.jpg";
