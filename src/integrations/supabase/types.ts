@@ -156,6 +156,48 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          age_range: string | null
+          area: string | null
+          available_now: boolean
+          created_at: string
+          id: string
+          is_demo: boolean
+          job_group: string | null
+          networking_enabled: boolean
+          nickname: string
+          talk_topics: string[]
+          user_id: string | null
+        }
+        Insert: {
+          age_range?: string | null
+          area?: string | null
+          available_now?: boolean
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          job_group?: string | null
+          networking_enabled?: boolean
+          nickname: string
+          talk_topics?: string[]
+          user_id?: string | null
+        }
+        Update: {
+          age_range?: string | null
+          area?: string | null
+          available_now?: boolean
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          job_group?: string | null
+          networking_enabled?: boolean
+          nickname?: string
+          talk_topics?: string[]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           bar_id: string

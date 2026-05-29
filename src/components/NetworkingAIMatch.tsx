@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { Sparkles, Loader2, Wand2, Lightbulb } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { sampleNetworkingUsers, type NetworkingUser } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+
+export interface NetworkingProfile {
+  id: string;
+  nickname: string;
+  age_range: string | null;
+  job_group: string | null;
+  area: string | null;
+  talk_topics: string[];
+}
 
 interface Match {
   user_id: string;
@@ -28,7 +36,7 @@ const NetworkingAIMatch = ({
   users,
   onMatched,
 }: {
-  users: NetworkingUser[];
+  users: NetworkingProfile[];
   onMatched: (matches: Record<string, { score: number; reason: string }>) => void;
 }) => {
   const [interest, setInterest] = useState("");
@@ -40,10 +48,18 @@ const NetworkingAIMatch = ({
     setLoading(true);
     setResult(null);
     try {
+      const payload = users.map((u) => ({
+        id: u.id,
+        nickname: u.nickname,
+        jobGroup: u.job_group,
+        ageRange: u.age_range,
+        area: u.area,
+        talkTopics: u.talk_topics,
+      }));
       const { data, error } = await supabase.functions.invoke("ai-match-network", {
         body: {
           profile: { interest: text, jobGroup: "직장인", area: "서울" },
-          users,
+          users: payload,
         },
       });
       if (error) throw error;

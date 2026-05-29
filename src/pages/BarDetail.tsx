@@ -6,6 +6,7 @@ import { ArrowLeft, Heart, MapPin, Star, Clock, Wine, Users, Sparkles, Share2, L
 import { Badge } from "@/components/ui/badge";
 import BottomNav from "@/components/BottomNav";
 import BarAIInsights from "@/components/BarAIInsights";
+import ReviewForm from "@/components/ReviewForm";
 
 import barWhiskey from "@/assets/bar-whiskey.jpg";
 import barWine from "@/assets/bar-wine.jpg";
@@ -194,8 +195,12 @@ const BarDetail = () => {
         <div>
           <h2 className="text-lg font-serif font-bold text-foreground mb-4">리뷰 ({reviews.length})</h2>
           <div className="space-y-3">
+            <ReviewForm barId={bar.id} onAdded={async () => {
+              const { data } = await supabase.from("reviews").select("id, user_name, rating, content, created_at").eq("bar_id", bar.id).order("created_at", { ascending: false });
+              setReviews((data || []) as Review[]);
+            }} />
             {reviews.length === 0 && (
-              <p className="text-xs text-muted-foreground">아직 리뷰가 없습니다.</p>
+              <p className="text-xs text-muted-foreground">아직 리뷰가 없습니다. 첫 리뷰를 남겨보세요!</p>
             )}
             {reviews.map(review => (
               <div key={review.id} className="bg-gradient-card rounded-xl p-4 border border-border">
