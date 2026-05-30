@@ -133,15 +133,18 @@ const ChatRoom = () => {
     const content = newMessage.trim();
     setNewMessage("");
 
-    const { error } = await supabase.from("chat_messages").insert({
-      room_id: roomId,
-      sender_id: currentUserId,
-      content,
-    });
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .insert({ room_id: roomId, sender_id: currentUserId, content })
+      .select()
+      .single();
 
-    if (error) {
+    if (error || !data) {
       toast.error("메시지 전송에 실패했습니다");
       setNewMessage(content);
+    } else {
+      // Optimistic append (dedupe with realtime)
+      setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message]));
     }
     setSending(false);
     inputRef.current?.focus();
