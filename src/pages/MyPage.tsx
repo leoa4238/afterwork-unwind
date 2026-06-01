@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User, Star, MessageCircle, LogOut, Wine, Loader2 } from "lucide-react";
+import { User, Star, MessageCircle, LogOut, Wine, Loader2, Sparkles } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
