@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Wine, Loader2, ArrowLeft, Sparkles, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { Wine, Loader2, ArrowLeft, Sparkles, CheckCircle2, AlertCircle, ExternalLink, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -27,6 +27,8 @@ const PRESETS = [
 const Admin = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<string | null>(null);
   const [history, setHistory] = useState<CrawlResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +56,31 @@ const Admin = () => {
       toast.error(msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSeoulBulk = async () => {
+    setBulkLoading(true);
+    setError(null);
+    setBulkStatus("서울 바 검색 → 스크랩 → AI 추출 중... (1~3분 소요)");
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("crawl-bar", {
+        body: { bulk: true, limit: 12, perQuery: 3 },
+      });
+      if (fnErr) throw new Error(fnErr.message);
+      if (data?.error) throw new Error(data.error);
+      const bars: CrawlResult[] = data.bars || [];
+      setHistory((prev) => [...bars, ...prev]);
+      setBulkStatus(
+        `완료: ${data.inserted}개 추가 / ${data.attempted}개 시도 (서울 외 또는 실패 ${data.skipped?.length || 0}개 제외)`
+      );
+      toast.success(`서울 바 ${bars.length}곳 추가됨`);
+    } catch (e) {
+      const msg = (e as Error).message || "벌크 크롤링 실패";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -136,6 +163,43 @@ const Admin = () => {
             <div className="text-sm text-destructive flex items-start gap-2 pt-2 border-t border-border">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{error}</span>
+            </div>
+          )}
+        </Card>
+
+        {/* Seoul Bulk Crawl */}
+        <Card className="p-6 space-y-4 bg-gradient-to-br from-primary/10 to-card/60 border-primary/30">
+          <div className="flex items-start gap-3">
+            <MapPin className="w-6 h-6 text-primary mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-serif text-lg">🍶 서울 바 자동 수집</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Firecrawl Search로 다이닝코드·망고플레이트에서 서울 바를 검색하고,
+                각 페이지를 스크랩 → AI가 서울 주소만 필터링해서 DB에 자동 저장합니다.
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleSeoulBulk}
+            disabled={bulkLoading || loading}
+            className="w-full"
+            size="lg"
+          >
+            {bulkLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                서울 바 수집 중...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                서울 바 일괄 크롤 시작 (최대 12곳)
+              </>
+            )}
+          </Button>
+          {bulkStatus && (
+            <div className="text-xs text-muted-foreground border-t border-border pt-3">
+              {bulkStatus}
             </div>
           )}
         </Card>
