@@ -74,7 +74,7 @@ const ChatRoom = () => {
   useEffect(() => {
     if (!roomId) return;
     const channel = supabase
-      .channel(`room-${roomId}`)
+      .channel(`room-${roomId}`, { config: { private: true } })
       .on(
         "postgres_changes",
         {
