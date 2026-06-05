@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
-import { sampleBars } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { fetchBars } from "@/lib/bars";
 import BarCard from "@/components/BarCard";
 import SearchFilterBar from "@/components/SearchFilterBar";
 import BottomNav from "@/components/BottomNav";
 import AISearchPanel from "@/components/AISearchPanel";
 import AIConcierge from "@/components/AIConcierge";
-import { Wine, Sparkles } from "lucide-react";
+import { Wine, Sparkles, Loader2 } from "lucide-react";
 
 export interface AiMatchMap {
   [barId: string]: { score: number; reason: string; rank: number };
@@ -19,16 +20,21 @@ const Explore = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [aiMatches, setAiMatches] = useState<AiMatchMap>({});
 
+  const { data: bars = [], isLoading } = useQuery({
+    queryKey: ["bars"],
+    queryFn: fetchBars,
+  });
+
   const aiBarIds = Object.keys(aiMatches);
 
   const filteredBars = useMemo(() => {
     if (aiBarIds.length > 0) {
       return aiBarIds
-        .map((id) => sampleBars.find((b) => b.id === id))
-        .filter((b): b is (typeof sampleBars)[number] => Boolean(b));
+        .map((id) => bars.find((b) => b.id === id))
+        .filter((b): b is (typeof bars)[number] => Boolean(b));
     }
-    return sampleBars.filter((bar) => {
-      if (selectedArea !== "전체" && bar.area !== selectedArea) return false;
+    return bars.filter((bar) => {
+      if (selectedArea !== "전체" && !bar.area.includes(selectedArea)) return false;
       if (selectedDrink !== "전체" && !bar.category.includes(selectedDrink) && !bar.tags.some(t => t.includes(selectedDrink))) return false;
       if (selectedMoods.length > 0 && !selectedMoods.some(m => bar.tags.includes(m))) return false;
       if (searchQuery) {
@@ -37,7 +43,7 @@ const Explore = () => {
       }
       return true;
     });
-  }, [selectedArea, selectedDrink, selectedMoods, searchQuery, aiBarIds]);
+  }, [bars, selectedArea, selectedDrink, selectedMoods, searchQuery, aiBarIds]);
 
   const handleMoodToggle = (mood: string) => {
     setSelectedMoods(prev => prev.includes(mood) ? prev.filter(m => m !== mood) : [...prev, mood]);
@@ -84,7 +90,11 @@ const Explore = () => {
           </h2>
         </div>
 
-        {filteredBars.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-20">
+            <Loader2 className="w-8 h-8 text-primary mx-auto animate-spin" />
+          </div>
+        ) : filteredBars.length > 0 ? (
           <div className="space-y-4">
             {filteredBars.map((bar, i) => (
               <div key={bar.id} className="animate-slide-up" style={{ animationDelay: `${i * 0.1}s` }}>

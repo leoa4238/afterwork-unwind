@@ -231,7 +231,7 @@ export const sampleNetworkingUsers: NetworkingUser[] = [
   },
 ];
 
-export const areas = ["전체", "강남", "판교", "여의도", "을지로", "성수"];
+export const areas = ["전체", "강남", "판교", "여의도", "을지로", "성수", "송파", "합정", "마곡", "방배동", "남영동", "상수"];
 
 export const drinkTypes = ["전체", "위스키", "와인", "하이볼", "맥주", "칵테일"];
 
