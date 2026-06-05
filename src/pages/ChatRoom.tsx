@@ -142,12 +142,19 @@ const ChatRoom = () => {
     if (error || !data) {
       toast.error("메시지 전송에 실패했습니다");
       setNewMessage(content);
-    } else {
-      // Optimistic append (dedupe with realtime)
-      setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message]));
+      setSending(false);
+      inputRef.current?.focus();
+      return;
     }
+    // Optimistic append (dedupe with realtime)
+    setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message]));
     setSending(false);
     inputRef.current?.focus();
+
+    // Fire-and-forget AI reply (only triggers when the other side is a demo profile)
+    supabase.functions.invoke("ai-chat-reply", { body: { roomId } }).catch((e) => {
+      console.error("ai-chat-reply", e);
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
