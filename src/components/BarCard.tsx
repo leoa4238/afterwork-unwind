@@ -22,6 +22,16 @@ const barImages: Record<string, string> = {
   "8": barWine,
 };
 
+const categoryImage = (category: string): string => {
+  if (/위스키/.test(category)) return barWhiskey;
+  if (/와인/.test(category)) return barWine;
+  if (/하이볼/.test(category)) return barHighball;
+  if (/맥주|펍|브루어/.test(category)) return barBeer;
+  if (/칵테일/.test(category)) return barCocktail;
+  if (/이자카야|레트로/.test(category)) return barRetro;
+  return barPremium;
+};
+
 interface BarCardProps {
   bar: Bar;
   aiMatch?: { score: number; reason: string; rank?: number };
@@ -43,7 +53,7 @@ const BarCard = ({ bar, aiMatch }: BarCardProps) => {
         {/* Image */}
         <div className="relative h-44 overflow-hidden">
           <img
-            src={barImages[bar.id] || barWhiskey}
+            src={barImages[bar.id] || categoryImage(bar.category)}
             alt={bar.name}
             loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
