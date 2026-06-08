@@ -92,9 +92,12 @@ const MyPage = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 glass border-b border-border px-4 py-4">
-        <div className="max-w-lg mx-auto flex items-center gap-2">
-          <User className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-serif font-bold text-foreground">마이페이지</h1>
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <User className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-serif font-bold text-foreground">마이페이지</h1>
+          </div>
+          <NotificationBell />
         </div>
       </header>
 
@@ -182,6 +185,25 @@ const MyPage = () => {
                   </Link>
                 );
               })}
+            </div>
+          )}
+        </section>
+
+        {/* Blocked users */}
+        <section>
+          <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+            <ShieldOff className="w-4 h-4 text-primary" /> 차단 목록 ({blocked.length})
+          </h3>
+          {blocked.length === 0 ? (
+            <p className="text-xs text-muted-foreground">차단한 사용자가 없어요</p>
+          ) : (
+            <div className="space-y-2">
+              {blocked.map((b) => (
+                <div key={b.id} className="flex items-center justify-between bg-gradient-card rounded-xl p-3 border border-border">
+                  <span className="text-sm text-foreground">{b.nickname || "알 수 없는 사용자"}</span>
+                  <Button size="sm" variant="outline" onClick={() => unblock(b.id)}>해제</Button>
+                </div>
+              ))}
             </div>
           )}
         </section>
