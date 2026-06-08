@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Send, Shield, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import NotificationBell from "@/components/NotificationBell";
+import ReportDialog from "@/components/ReportDialog";
+import BlockDialog from "@/components/BlockDialog";
 
 interface Message {
   id: string;
@@ -22,15 +25,23 @@ interface RoomInfo {
 
 const ChatRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [otherNickname, setOtherNickname] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
   const [sending, setSending] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const otherUserId = room && currentUserId
+    ? room.user1_id === currentUserId ? room.user2_id : room.user1_id
+    : null;
 
   // Get current user
   useEffect(() => {
@@ -55,6 +66,14 @@ const ChatRoom = () => {
     };
     fetchRoom();
   }, [roomId]);
+
+  // Fetch other user's nickname
+  useEffect(() => {
+    if (!otherUserId) return;
+    supabase.from("profiles").select("nickname").eq("user_id", otherUserId).maybeSingle().then(({ data }) => {
+      if (data?.nickname) setOtherNickname(data.nickname);
+    });
+  }, [otherUserId]);
 
   // Fetch messages
   useEffect(() => {
@@ -179,7 +198,7 @@ const ChatRoom = () => {
               <ArrowLeft className="w-4 h-4 text-foreground" />
             </Link>
             <div>
-              <h1 className="text-sm font-semibold text-foreground">1:1 대화</h1>
+              <h1 className="text-sm font-semibold text-foreground">{otherNickname || "1:1 대화"}</h1>
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3 text-muted-foreground" />
                 <span className={`text-xs ${isExpired ? "text-destructive" : "text-muted-foreground"}`}>
@@ -188,16 +207,47 @@ const ChatRoom = () => {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center" title="신고">
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setReportOpen(true)}
+              className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-destructive/20 transition"
+              title="신고"
+              disabled={!otherUserId}
+            >
               <AlertTriangle className="w-4 h-4 text-muted-foreground" />
             </button>
-            <button className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center" title="차단">
+            <button
+              onClick={() => setBlockOpen(true)}
+              className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-destructive/20 transition"
+              title="차단"
+              disabled={!otherUserId}
+            >
               <Shield className="w-4 h-4 text-muted-foreground" />
             </button>
+            <NotificationBell />
           </div>
         </div>
       </header>
+
+      {otherUserId && currentUserId && (
+        <>
+          <ReportDialog
+            open={reportOpen}
+            onOpenChange={setReportOpen}
+            reporterId={currentUserId}
+            reportedUserId={otherUserId}
+            roomId={roomId}
+          />
+          <BlockDialog
+            open={blockOpen}
+            onOpenChange={setBlockOpen}
+            blockerId={currentUserId}
+            blockedId={otherUserId}
+            blockedNickname={otherNickname}
+            onBlocked={() => navigate("/chat")}
+          />
+        </>
+      )}
 
       {/* Safety notice */}
       <div className="px-4 py-2 max-w-lg mx-auto w-full">

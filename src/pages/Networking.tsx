@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import BottomNav from "@/components/BottomNav";
+import NotificationBell from "@/components/NotificationBell";
 import NetworkingAIMatch, { type NetworkingProfile } from "@/components/NetworkingAIMatch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,13 +29,23 @@ const Networking = () => {
     let cancelled = false;
     (async () => {
       setLoadingUsers(true);
+      // collect blocked user_ids (both directions) to hide
+      let hidden = new Set<string>();
+      if (user?.id) {
+        const [{ data: outBlocks }, { data: inBlocks }] = await Promise.all([
+          supabase.from("blocks").select("blocked_id").eq("blocker_id", user.id),
+          supabase.from("blocks").select("blocker_id").eq("blocked_id", user.id),
+        ]);
+        (outBlocks || []).forEach((b: any) => hidden.add(b.blocked_id));
+        (inBlocks || []).forEach((b: any) => hidden.add(b.blocker_id));
+      }
       const { data } = await supabase
         .from("profiles")
         .select("id, nickname, age_range, job_group, area, talk_topics, user_id")
         .eq("available_now", true)
         .eq("networking_enabled", true);
       if (cancelled) return;
-      const filtered = (data || []).filter((p: any) => p.user_id !== user?.id);
+      const filtered = (data || []).filter((p: any) => p.user_id !== user?.id && !hidden.has(p.user_id));
       setUsers(filtered as NetworkingProfile[]);
       setLoadingUsers(false);
     })();
@@ -74,7 +85,12 @@ const Networking = () => {
       .single();
     setRequesting(null);
     if (error || !data) {
-      toast.error("채팅방 생성 실패");
+      const msg = error?.message || "";
+      if (msg.includes("차단")) {
+        toast.error("차단된 사용자입니다");
+      } else {
+        toast.error("채팅방 생성 실패");
+      }
       return;
     }
     toast.success(`${target.nickname}님과의 대화가 시작됐어요 (24h)`);
@@ -93,6 +109,7 @@ const Networking = () => {
             <div className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground">{networkingOn ? "ON" : "OFF"}</span>
               <Switch checked={networkingOn} onCheckedChange={toggleNetworking} />
+              <NotificationBell />
             </div>
           </div>
         </div>

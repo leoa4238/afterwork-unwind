@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { User, Star, MessageCircle, LogOut, Wine, Loader2, Sparkles } from "lucide-react";
+import { User, Star, MessageCircle, LogOut, Wine, Loader2, Sparkles, ShieldOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import NotificationBell from "@/components/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,12 +24,31 @@ interface MyRoom {
   is_expired: boolean;
 }
 
+interface BlockedItem {
+  id: string;
+  blocked_id: string;
+  nickname?: string;
+}
+
 const MyPage = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [reviews, setReviews] = useState<MyReview[]>([]);
   const [rooms, setRooms] = useState<MyRoom[]>([]);
+  const [blocked, setBlocked] = useState<BlockedItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const loadBlocked = async (uid: string) => {
+    const { data } = await supabase.from("blocks").select("id, blocked_id").eq("blocker_id", uid);
+    let list = (data || []) as BlockedItem[];
+    const ids = list.map((b) => b.blocked_id);
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, nickname").in("user_id", ids);
+      const map = Object.fromEntries((profs || []).map((p: any) => [p.user_id, p.nickname]));
+      list = list.map((b) => ({ ...b, nickname: map[b.blocked_id] }));
+    }
+    setBlocked(list);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -46,9 +66,16 @@ const MyPage = () => {
       }
       setReviews(reviewList);
       setRooms((rm.data || []) as MyRoom[]);
+      await loadBlocked(user.id);
       setLoading(false);
     })();
   }, [user]);
+
+  const unblock = async (id: string) => {
+    await supabase.from("blocks").delete().eq("id", id);
+    setBlocked((prev) => prev.filter((b) => b.id !== id));
+    toast.success("차단 해제됨");
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,9 +92,12 @@ const MyPage = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 glass border-b border-border px-4 py-4">
-        <div className="max-w-lg mx-auto flex items-center gap-2">
-          <User className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-serif font-bold text-foreground">마이페이지</h1>
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <User className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-serif font-bold text-foreground">마이페이지</h1>
+          </div>
+          <NotificationBell />
         </div>
       </header>
 
@@ -155,6 +185,25 @@ const MyPage = () => {
                   </Link>
                 );
               })}
+            </div>
+          )}
+        </section>
+
+        {/* Blocked users */}
+        <section>
+          <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+            <ShieldOff className="w-4 h-4 text-primary" /> 차단 목록 ({blocked.length})
+          </h3>
+          {blocked.length === 0 ? (
+            <p className="text-xs text-muted-foreground">차단한 사용자가 없어요</p>
+          ) : (
+            <div className="space-y-2">
+              {blocked.map((b) => (
+                <div key={b.id} className="flex items-center justify-between bg-gradient-card rounded-xl p-3 border border-border">
+                  <span className="text-sm text-foreground">{b.nickname || "알 수 없는 사용자"}</span>
+                  <Button size="sm" variant="outline" onClick={() => unblock(b.id)}>해제</Button>
+                </div>
+              ))}
             </div>
           )}
         </section>

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MessageCircle, Clock, Wine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
+import NotificationBell from "@/components/NotificationBell";
 
 interface ChatRoom {
   id: string;
@@ -79,9 +80,12 @@ const Chat = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 glass border-b border-border px-4 py-4">
-        <div className="max-w-lg mx-auto flex items-center gap-2">
-          <MessageCircle className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-serif font-bold text-foreground">채팅</h1>
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-serif font-bold text-foreground">채팅</h1>
+          </div>
+          <NotificationBell />
         </div>
       </header>
 
