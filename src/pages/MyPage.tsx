@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { User, Star, MessageCircle, LogOut, Wine, Loader2, Sparkles } from "lucide-react";
+import { User, Star, MessageCircle, LogOut, Wine, Loader2, Sparkles, ShieldOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import NotificationBell from "@/components/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,12 +24,31 @@ interface MyRoom {
   is_expired: boolean;
 }
 
+interface BlockedItem {
+  id: string;
+  blocked_id: string;
+  nickname?: string;
+}
+
 const MyPage = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [reviews, setReviews] = useState<MyReview[]>([]);
   const [rooms, setRooms] = useState<MyRoom[]>([]);
+  const [blocked, setBlocked] = useState<BlockedItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const loadBlocked = async (uid: string) => {
+    const { data } = await supabase.from("blocks").select("id, blocked_id").eq("blocker_id", uid);
+    let list = (data || []) as BlockedItem[];
+    const ids = list.map((b) => b.blocked_id);
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, nickname").in("user_id", ids);
+      const map = Object.fromEntries((profs || []).map((p: any) => [p.user_id, p.nickname]));
+      list = list.map((b) => ({ ...b, nickname: map[b.blocked_id] }));
+    }
+    setBlocked(list);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -46,9 +66,16 @@ const MyPage = () => {
       }
       setReviews(reviewList);
       setRooms((rm.data || []) as MyRoom[]);
+      await loadBlocked(user.id);
       setLoading(false);
     })();
   }, [user]);
+
+  const unblock = async (id: string) => {
+    await supabase.from("blocks").delete().eq("id", id);
+    setBlocked((prev) => prev.filter((b) => b.id !== id));
+    toast.success("차단 해제됨");
+  };
 
   const handleSignOut = async () => {
     await signOut();
