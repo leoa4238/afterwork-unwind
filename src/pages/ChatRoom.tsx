@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Send, Shield, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import NotificationBell from "@/components/NotificationBell";
+import ReportDialog from "@/components/ReportDialog";
+import BlockDialog from "@/components/BlockDialog";
 
 interface Message {
   id: string;
@@ -22,15 +25,23 @@ interface RoomInfo {
 
 const ChatRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [otherNickname, setOtherNickname] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
   const [sending, setSending] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const otherUserId = room && currentUserId
+    ? room.user1_id === currentUserId ? room.user2_id : room.user1_id
+    : null;
 
   // Get current user
   useEffect(() => {
