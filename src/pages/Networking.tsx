@@ -29,13 +29,23 @@ const Networking = () => {
     let cancelled = false;
     (async () => {
       setLoadingUsers(true);
+      // collect blocked user_ids (both directions) to hide
+      let hidden = new Set<string>();
+      if (user?.id) {
+        const [{ data: outBlocks }, { data: inBlocks }] = await Promise.all([
+          supabase.from("blocks").select("blocked_id").eq("blocker_id", user.id),
+          supabase.from("blocks").select("blocker_id").eq("blocked_id", user.id),
+        ]);
+        (outBlocks || []).forEach((b: any) => hidden.add(b.blocked_id));
+        (inBlocks || []).forEach((b: any) => hidden.add(b.blocker_id));
+      }
       const { data } = await supabase
         .from("profiles")
         .select("id, nickname, age_range, job_group, area, talk_topics, user_id")
         .eq("available_now", true)
         .eq("networking_enabled", true);
       if (cancelled) return;
-      const filtered = (data || []).filter((p: any) => p.user_id !== user?.id);
+      const filtered = (data || []).filter((p: any) => p.user_id !== user?.id && !hidden.has(p.user_id));
       setUsers(filtered as NetworkingProfile[]);
       setLoadingUsers(false);
     })();
