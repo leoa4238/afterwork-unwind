@@ -67,6 +67,14 @@ const ChatRoom = () => {
     fetchRoom();
   }, [roomId]);
 
+  // Fetch other user's nickname
+  useEffect(() => {
+    if (!otherUserId) return;
+    supabase.from("profiles").select("nickname").eq("user_id", otherUserId).maybeSingle().then(({ data }) => {
+      if (data?.nickname) setOtherNickname(data.nickname);
+    });
+  }, [otherUserId]);
+
   // Fetch messages
   useEffect(() => {
     if (!roomId) return;
