@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchBars } from "@/lib/bars";
 import BarCard from "@/components/BarCard";
@@ -13,7 +14,14 @@ export interface AiMatchMap {
 }
 
 const Explore = () => {
-  const [selectedArea, setSelectedArea] = useState("전체");
+  const [searchParams] = useSearchParams();
+  const [selectedArea, setSelectedArea] = useState(searchParams.get("area") || "전체");
+
+  useEffect(() => {
+    const area = searchParams.get("area");
+    if (area) setSelectedArea(area);
+  }, [searchParams]);
+
   const [selectedDrink, setSelectedDrink] = useState("전체");
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
