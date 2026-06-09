@@ -172,24 +172,6 @@ const Chat = () => {
                 </Link>
               );
             })}
-                        <p className="text-sm font-medium text-foreground">
-                          대화 상대
-                        </p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Clock className="w-3 h-3 text-muted-foreground" />
-                          <span className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}>
-                            {getTimeRemaining(room.expires_at)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    {expired && (
-                      <span className="text-xs text-destructive bg-destructive/10 px-2 py-1 rounded-full">만료</span>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
           </div>
         )}
       </main>
