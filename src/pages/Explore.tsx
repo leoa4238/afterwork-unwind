@@ -72,7 +72,7 @@ const Explore = () => {
       </header>
 
       <main className="px-4 py-4 max-w-lg mx-auto space-y-4">
-        <AISearchPanel onApply={setAiMatches} />
+        <AISearchPanel bars={bars} onApply={setAiMatches} />
 
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
