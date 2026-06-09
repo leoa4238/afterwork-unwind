@@ -13,6 +13,8 @@ interface ChatRoom {
   created_at: string;
   expires_at: string;
   is_expired: boolean;
+  other_nickname?: string;
+  last_message?: string;
 }
 
 const Chat = () => {
@@ -32,7 +34,29 @@ const Chat = () => {
           .select("*")
           .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
           .order("created_at", { ascending: false });
-        if (data) setRooms(data);
+        const baseRooms = (data || []) as ChatRoom[];
+
+        // Fetch other nicknames + last messages in parallel
+        const otherIds = [...new Set(baseRooms.map((r) => (r.user1_id === userId ? r.user2_id : r.user1_id)))];
+        const roomIds = baseRooms.map((r) => r.id);
+        const [{ data: profs }, { data: msgs }] = await Promise.all([
+          otherIds.length
+            ? supabase.from("profiles").select("user_id, nickname").in("user_id", otherIds)
+            : Promise.resolve({ data: [] as any }),
+          roomIds.length
+            ? supabase.from("chat_messages").select("room_id, content, created_at").in("room_id", roomIds).order("created_at", { ascending: false })
+            : Promise.resolve({ data: [] as any }),
+        ]);
+        const nickMap = Object.fromEntries((profs || []).map((p: any) => [p.user_id, p.nickname]));
+        const lastMap: Record<string, string> = {};
+        (msgs || []).forEach((m: any) => {
+          if (!lastMap[m.room_id]) lastMap[m.room_id] = m.content;
+        });
+        setRooms(baseRooms.map((r) => ({
+          ...r,
+          other_nickname: nickMap[r.user1_id === userId ? r.user2_id : r.user1_id],
+          last_message: lastMap[r.id],
+        })));
       }
       setLoading(false);
     };
@@ -113,7 +137,6 @@ const Chat = () => {
           <div className="space-y-3">
             {rooms.map((room) => {
               const expired = isRoomExpired(room);
-              const otherUserId = room.user1_id === currentUserId ? room.user2_id : room.user1_id;
               return (
                 <Link
                   key={room.id}
@@ -123,11 +146,32 @@ const Chat = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                        <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <MessageCircle className="w-5 h-5 text-primary" />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {room.other_nickname || "대화 상대"}
+                        </p>
+                        {room.last_message && (
+                          <p className="text-xs text-muted-foreground truncate">{room.last_message}</p>
+                        )}
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          <span className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+                            {getTimeRemaining(room.expires_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {expired && (
+                      <span className="text-xs text-destructive bg-destructive/10 px-2 py-1 rounded-full shrink-0">만료</span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
                         <p className="text-sm font-medium text-foreground">
                           대화 상대
                         </p>
