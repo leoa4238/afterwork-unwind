@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { sampleBars, type Bar } from "@/data/mockData";
+import { type Bar } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ interface AIResult {
 }
 
 interface AISearchPanelProps {
+  bars: Bar[];
   onApply?: (matches: Record<string, { score: number; reason: string; rank: number }>) => void;
 }
 
@@ -27,18 +28,24 @@ const EXAMPLE_QUERIES = [
   "여의도에서 야경 보면서 혼술",
 ];
 
-const AISearchPanel = ({ onApply }: AISearchPanelProps) => {
+const AISearchPanel = ({ bars, onApply }: AISearchPanelProps) => {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AIResult | null>(null);
 
   const runRecommend = async (q: string) => {
     if (!q.trim()) return;
+    if (!bars || bars.length === 0) {
+      toast({ title: "바 데이터 로딩 중", description: "잠시 후 다시 시도해주세요." });
+      return;
+    }
     setLoading(true);
     setResult(null);
     try {
+      // Limit payload size for AI gateway
+      const candidates = bars.slice(0, 40);
       const { data, error } = await supabase.functions.invoke("ai-recommend", {
-        body: { query: q, bars: sampleBars },
+        body: { query: q, bars: candidates },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -135,7 +142,7 @@ const AISearchPanel = ({ onApply }: AISearchPanelProps) => {
             </div>
             <div className="space-y-2">
               {result.recommendations.map((rec, idx) => {
-                const bar = sampleBars.find((b: Bar) => b.id === rec.bar_id);
+                const bar = bars.find((b: Bar) => b.id === rec.bar_id);
                 if (!bar) return null;
                 return (
                   <div

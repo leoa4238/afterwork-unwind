@@ -4,11 +4,12 @@ import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-bar.jpg";
 
 const areas = [
-  { name: "강남", count: 24 },
-  { name: "판교", count: 12 },
-  { name: "여의도", count: 18 },
-  { name: "을지로", count: 15 },
-  { name: "성수", count: 20 },
+  { name: "송파", count: 94 },
+  { name: "성수", count: 5 },
+  { name: "여의도", count: 2 },
+  { name: "강남", count: 2 },
+  { name: "을지로", count: 2 },
+  { name: "판교", count: 1 },
 ];
 
 const Landing = () => {
