@@ -5,6 +5,8 @@ import { MessageCircle, Clock, Wine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import NotificationBell from "@/components/NotificationBell";
+import { useAuth } from "@/hooks/useAuth";
+import { getDemoRooms } from "@/lib/demoAuth";
 
 interface ChatRoom {
   id: string;
@@ -18,12 +20,20 @@ interface ChatRoom {
 }
 
 const Chat = () => {
+  const { user, isDemo } = useAuth();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const init = async () => {
+      if (isDemo && user) {
+        setCurrentUserId(user.id);
+        setRooms(getDemoRooms() as ChatRoom[]);
+        setLoading(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id || null;
       setCurrentUserId(userId);
@@ -61,7 +71,7 @@ const Chat = () => {
       setLoading(false);
     };
     init();
-  }, []);
+  }, [isDemo, user]);
 
   const getTimeRemaining = (expiresAt: string) => {
     const diff = new Date(expiresAt).getTime() - Date.now();

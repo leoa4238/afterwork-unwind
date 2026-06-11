@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import ReportDialog from "@/components/ReportDialog";
 import BlockDialog from "@/components/BlockDialog";
+import { useAuth } from "@/hooks/useAuth";
+import { addDemoMessage, DEMO_USER_ID, getDemoMessages, getDemoRooms } from "@/lib/demoAuth";
 
 interface Message {
   id: string;
@@ -26,6 +28,7 @@ interface RoomInfo {
 const ChatRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const { isDemo, user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [room, setRoom] = useState<RoomInfo | null>(null);
@@ -45,14 +48,27 @@ const ChatRoom = () => {
 
   // Get current user
   useEffect(() => {
+    if (isDemo && user) {
+      setCurrentUserId(user.id);
+      return;
+    }
     supabase.auth.getSession().then(({ data }) => {
       setCurrentUserId(data.session?.user?.id || null);
     });
-  }, []);
+  }, [isDemo, user]);
 
   // Fetch room info
   useEffect(() => {
     if (!roomId) return;
+    if (isDemo) {
+      const demoRoom = getDemoRooms().find((item) => item.id === roomId);
+      if (demoRoom) {
+        setRoom(demoRoom);
+        setOtherNickname(demoRoom.other_nickname);
+        setIsExpired(demoRoom.is_expired || new Date(demoRoom.expires_at) <= new Date());
+      }
+      return;
+    }
     const fetchRoom = async () => {
       const { data, error } = await supabase
         .from("chat_rooms")
@@ -65,19 +81,24 @@ const ChatRoom = () => {
       }
     };
     fetchRoom();
-  }, [roomId]);
+  }, [roomId, isDemo]);
 
   // Fetch other user's nickname
   useEffect(() => {
+    if (isDemo) return;
     if (!otherUserId) return;
     supabase.from("profiles").select("nickname").eq("user_id", otherUserId).maybeSingle().then(({ data }) => {
       if (data?.nickname) setOtherNickname(data.nickname);
     });
-  }, [otherUserId]);
+  }, [otherUserId, isDemo]);
 
   // Fetch messages
   useEffect(() => {
     if (!roomId) return;
+    if (isDemo) {
+      setMessages(getDemoMessages(roomId) as Message[]);
+      return;
+    }
     const fetchMessages = async () => {
       const { data } = await supabase
         .from("chat_messages")
@@ -87,10 +108,11 @@ const ChatRoom = () => {
       if (data) setMessages(data);
     };
     fetchMessages();
-  }, [roomId]);
+  }, [roomId, isDemo]);
 
   // Real-time subscription
   useEffect(() => {
+    if (isDemo) return;
     if (!roomId) return;
     const channel = supabase
       .channel(`room-${roomId}`, { config: { private: true } })
@@ -115,7 +137,7 @@ const ChatRoom = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId]);
+  }, [roomId, isDemo]);
 
   // Auto-scroll
   useEffect(() => {
@@ -151,6 +173,23 @@ const ChatRoom = () => {
     setSending(true);
     const content = newMessage.trim();
     setNewMessage("");
+
+    if (isDemo && room) {
+      const mine = addDemoMessage(room, DEMO_USER_ID, content) as Message;
+      setMessages((prev) => [...prev, mine]);
+      setSending(false);
+      inputRef.current?.focus();
+
+      window.setTimeout(() => {
+        const reply = addDemoMessage(
+          room,
+          otherUserId || room.user2_id,
+          "좋아요. 오늘은 너무 무겁지 않게, 근처 조용한 바로 가볍게 시작해도 좋겠네요."
+        ) as Message;
+        setMessages((prev) => [...prev, reply]);
+      }, 500);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("chat_messages")

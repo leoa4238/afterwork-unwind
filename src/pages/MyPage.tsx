@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import NotificationBell from "@/components/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { getDemoRooms } from "@/lib/demoAuth";
 import { toast } from "sonner";
 
 interface MyReview {
@@ -31,7 +32,7 @@ interface BlockedItem {
 }
 
 const MyPage = () => {
-  const { user, profile, signOut, refreshProfile } = useAuth();
+  const { user, profile, signOut, refreshProfile, isDemo } = useAuth();
   const navigate = useNavigate();
   const [reviews, setReviews] = useState<MyReview[]>([]);
   const [rooms, setRooms] = useState<MyRoom[]>([]);
@@ -52,6 +53,22 @@ const MyPage = () => {
 
   useEffect(() => {
     if (!user) return;
+    if (isDemo) {
+      setReviews([
+        {
+          id: "demo-review-1",
+          bar_id: "bar-1",
+          rating: 5,
+          content: "혼자 앉기 편하고 조용해서 퇴근 후 한잔하기 좋았어요.",
+          created_at: new Date().toISOString(),
+          bar_name: "데모 위스키 바",
+        },
+      ]);
+      setRooms(getDemoRooms() as MyRoom[]);
+      setBlocked([]);
+      setLoading(false);
+      return;
+    }
     (async () => {
       const [rev, rm] = await Promise.all([
         supabase.from("reviews").select("id, bar_id, rating, content, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
@@ -69,7 +86,7 @@ const MyPage = () => {
       await loadBlocked(user.id);
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, isDemo]);
 
   const unblock = async (id: string) => {
     await supabase.from("blocks").delete().eq("id", id);
@@ -85,6 +102,10 @@ const MyPage = () => {
 
   const toggleNetworkingDefault = async (on: boolean) => {
     if (!user) return;
+    if (isDemo) {
+      toast.success(on ? "데모 네트워킹 기본값 ON" : "데모 네트워킹 기본값 OFF");
+      return;
+    }
     await supabase.from("profiles").update({ networking_enabled: on }).eq("user_id", user.id);
     refreshProfile();
   };

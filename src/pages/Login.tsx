@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, UserRoundCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signInDemo } = useAuth();
   const from = (location.state as { from?: string } | null)?.from || "/explore";
 
   const [email, setEmail] = useState("");
@@ -41,6 +43,12 @@ const Login = () => {
       return;
     }
     if (result.redirected) return;
+    navigate(from, { replace: true });
+  };
+
+  const handleDemoLogin = () => {
+    signInDemo();
+    toast.success("데모 계정으로 로그인되었습니다");
     navigate(from, { replace: true });
   };
 
@@ -90,6 +98,15 @@ const Login = () => {
         <Button variant="outline" size="lg" className="w-full" onClick={handleGoogle} disabled={loading}>
           Google로 시작하기
         </Button>
+
+        <Button variant="secondary" size="lg" className="w-full" onClick={handleDemoLogin} disabled={loading}>
+          <UserRoundCheck className="w-4 h-4" />
+          데모 계정으로 둘러보기
+        </Button>
+
+        <p className="text-xs text-muted-foreground text-center leading-relaxed">
+          과제 시연용 데모 계정입니다. 네트워킹, 채팅, 마이페이지 화면을 바로 확인할 수 있어요.
+        </p>
 
         <div className="text-center">
           <p className="text-sm text-muted-foreground">

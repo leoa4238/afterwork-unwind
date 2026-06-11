@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { demoProfile, demoUser, isDemoAuthEnabled, setDemoAuthEnabled } from "@/lib/demoAuth";
 
 interface Profile {
   id: string;
@@ -19,6 +20,8 @@ interface Ctx {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  isDemo: boolean;
+  signInDemo: () => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -28,6 +31,8 @@ const AuthContext = createContext<Ctx>({
   session: null,
   profile: null,
   loading: true,
+  isDemo: false,
+  signInDemo: () => {},
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -36,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState(() => isDemoAuthEnabled());
 
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
@@ -47,6 +53,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    if (isDemo) {
+      setSession(null);
+      setProfile(demoProfile as Profile);
+      setLoading(false);
+      return;
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       if (s?.user) {
@@ -63,19 +76,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isDemo]);
+
+  const signInDemo = () => {
+    setDemoAuthEnabled(true);
+    setIsDemo(true);
+    setSession(null);
+    setProfile(demoProfile as Profile);
+    setLoading(false);
+  };
 
   const signOut = async () => {
+    setDemoAuthEnabled(false);
+    setIsDemo(false);
     await supabase.auth.signOut();
     setProfile(null);
   };
 
   const refreshProfile = async () => {
+    if (isDemo) {
+      setProfile(demoProfile as Profile);
+      return;
+    }
     if (session?.user) await loadProfile(session.user.id);
   };
 
   return (
-    <AuthContext.Provider value={{ user: session?.user ?? null, session, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user: isDemo ? demoUser : session?.user ?? null,
+        session,
+        profile,
+        loading,
+        isDemo,
+        signInDemo,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

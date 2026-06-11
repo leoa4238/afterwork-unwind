@@ -9,11 +9,12 @@ import NotificationBell from "@/components/NotificationBell";
 import NetworkingAIMatch, { type NetworkingProfile } from "@/components/NetworkingAIMatch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { createDemoRoom, demoNetworkingProfiles } from "@/lib/demoAuth";
 import { toast } from "sonner";
 
 const Networking = () => {
   const navigate = useNavigate();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, isDemo } = useAuth();
   const [networkingOn, setNetworkingOn] = useState(profile?.networking_enabled ?? false);
   const [aiMatches, setAiMatches] = useState<Record<string, { score: number; reason: string }>>({});
   const [users, setUsers] = useState<NetworkingProfile[]>([]);
@@ -26,6 +27,11 @@ const Networking = () => {
 
   useEffect(() => {
     if (!networkingOn) return;
+    if (isDemo) {
+      setUsers(demoNetworkingProfiles as NetworkingProfile[]);
+      setLoadingUsers(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setLoadingUsers(true);
@@ -50,7 +56,7 @@ const Networking = () => {
       setLoadingUsers(false);
     })();
     return () => { cancelled = true; };
-  }, [networkingOn, user?.id]);
+  }, [networkingOn, user?.id, isDemo]);
 
   const orderedUsers = useMemo(() => {
     const ids = Object.keys(aiMatches);
@@ -64,6 +70,7 @@ const Networking = () => {
 
   const toggleNetworking = async (on: boolean) => {
     setNetworkingOn(on);
+    if (isDemo) return;
     if (user) {
       await supabase
         .from("profiles")
@@ -75,6 +82,12 @@ const Networking = () => {
 
   const requestChat = async (target: NetworkingProfile) => {
     if (!user) return;
+    if (isDemo) {
+      const room = createDemoRoom(target as NetworkingProfile & { user_id?: string });
+      toast.success(`${target.nickname}님과의 데모 대화가 시작됐어요`);
+      navigate(`/chat/${room.id}`);
+      return;
+    }
     setRequesting(target.id);
     // Use target user_id if exists (real user), else use profile.id (demo)
     const targetId = (target as any).user_id || target.id;
