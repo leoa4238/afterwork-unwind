@@ -25,11 +25,12 @@ const Signup = () => {
       return;
     }
     setLoading(true);
+    const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/explore`,
+        emailRedirectTo: `${window.location.origin}${basePath}/explore`,
         data: {
           nickname,
           age_range: selectedAge,
