@@ -31,8 +31,9 @@ const Login = () => {
 
   const handleGoogle = async () => {
     setLoading(true);
+    const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + from,
+      redirect_uri: window.location.origin + basePath + from,
     });
     if (result.error) {
       setLoading(false);
