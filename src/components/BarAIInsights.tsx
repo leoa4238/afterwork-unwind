@@ -3,6 +3,7 @@ import { Sparkles, Loader2, GlassWater, Utensils, Tag, ArrowRight } from "lucide
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Bar } from "@/data/mockData";
+import { buildLocalBarInsight } from "@/lib/localAi";
 
 interface Insight {
   why_today: string;
@@ -36,7 +37,7 @@ const BarAIInsights = ({ bar }: { bar: Bar }) => {
         .select("id, name, area, category, solo_friendly_score, quiet_score");
       if (barsErr || !bars) {
         if (!cancelled) {
-          setError("바 데이터를 불러오지 못했습니다.");
+          setData(buildLocalBarInsight(bar, [bar]));
           setLoading(false);
         }
         return;
@@ -71,7 +72,7 @@ const BarAIInsights = ({ bar }: { bar: Bar }) => {
       });
       if (cancelled) return;
       if (e || (d as any)?.error) {
-        setError((d as any)?.error || e?.message || "AI 인사이트 로드 실패");
+        setData(buildLocalBarInsight(bar, allBars as Bar[]));
       } else {
         setData(d as Insight);
       }

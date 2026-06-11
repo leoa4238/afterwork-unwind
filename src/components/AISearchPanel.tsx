@@ -5,6 +5,7 @@ import { type Bar } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { buildLocalBarRecommendations } from "@/lib/localAi";
 
 interface Recommendation {
   bar_id: string;
@@ -33,6 +34,15 @@ const AISearchPanel = ({ bars, onApply }: AISearchPanelProps) => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AIResult | null>(null);
 
+  const applyResult = (nextResult: AIResult) => {
+    setResult(nextResult);
+    const map: Record<string, { score: number; reason: string; rank: number }> = {};
+    nextResult.recommendations.forEach((r, idx) => {
+      map[r.bar_id] = { score: r.match_score, reason: r.reason, rank: idx + 1 };
+    });
+    onApply?.(map);
+  };
+
   const runRecommend = async (q: string) => {
     if (!q.trim()) return;
     if (!bars || bars.length === 0) {
@@ -49,18 +59,13 @@ const AISearchPanel = ({ bars, onApply }: AISearchPanelProps) => {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setResult(data as AIResult);
-      const map: Record<string, { score: number; reason: string; rank: number }> = {};
-      (data as AIResult).recommendations.forEach((r, idx) => {
-        map[r.bar_id] = { score: r.match_score, reason: r.reason, rank: idx + 1 };
-      });
-      onApply?.(map);
+      applyResult(data as AIResult);
     } catch (e) {
       console.error(e);
+      applyResult(buildLocalBarRecommendations(q, bars));
       toast({
-        title: "AI 추천 실패",
-        description: e instanceof Error ? e.message : "잠시 후 다시 시도해주세요.",
-        variant: "destructive",
+        title: "로컬 추천으로 전환했어요",
+        description: "새 Supabase에 AI 함수가 없어 브라우저 안에서 추천을 계산했습니다.",
       });
     } finally {
       setLoading(false);

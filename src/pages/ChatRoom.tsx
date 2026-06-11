@@ -9,6 +9,7 @@ import ReportDialog from "@/components/ReportDialog";
 import BlockDialog from "@/components/BlockDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { addDemoMessage, DEMO_USER_ID, getDemoMessages, getDemoRooms } from "@/lib/demoAuth";
+import { buildLocalChatReply } from "@/lib/localAi";
 
 interface Message {
   id: string;
@@ -37,6 +38,7 @@ const ChatRoom = () => {
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
   const [sending, setSending] = useState(false);
+  const [botTyping, setBotTyping] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -130,6 +132,7 @@ const ChatRoom = () => {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
+          if (newMsg.sender_id !== currentUserId) setBotTyping(false);
         }
       )
       .subscribe();
@@ -137,7 +140,7 @@ const ChatRoom = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, isDemo]);
+  }, [roomId, isDemo, currentUserId]);
 
   // Auto-scroll
   useEffect(() => {
@@ -168,6 +171,18 @@ const ChatRoom = () => {
     return () => clearInterval(interval);
   }, [room]);
 
+  const appendLocalBotReply = (content: string) => {
+    const senderId = otherUserId || room?.user2_id || "local-chatbot";
+    const reply: Message = {
+      id: `local-chatbot-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sender_id: senderId,
+      content: buildLocalChatReply(content, otherNickname || "상대"),
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, reply]);
+    setBotTyping(false);
+  };
+
   const handleSend = async () => {
     if (!newMessage.trim() || !roomId || !currentUserId || isExpired || sending) return;
     setSending(true);
@@ -179,14 +194,16 @@ const ChatRoom = () => {
       setMessages((prev) => [...prev, mine]);
       setSending(false);
       inputRef.current?.focus();
+      setBotTyping(true);
 
       window.setTimeout(() => {
         const reply = addDemoMessage(
           room,
           otherUserId || room.user2_id,
-          "좋아요. 오늘은 너무 무겁지 않게, 근처 조용한 바로 가볍게 시작해도 좋겠네요."
+          buildLocalChatReply(content, otherNickname || "상대")
         ) as Message;
         setMessages((prev) => [...prev, reply]);
+        setBotTyping(false);
       }, 500);
       return;
     }
@@ -208,11 +225,21 @@ const ChatRoom = () => {
     setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message]));
     setSending(false);
     inputRef.current?.focus();
+    setBotTyping(true);
 
-    // Fire-and-forget AI reply (only triggers when the other side is a demo profile)
-    supabase.functions.invoke("ai-chat-reply", { body: { roomId } }).catch((e) => {
-      console.error("ai-chat-reply", e);
-    });
+    // Prefer the server-side AI reply when deployed; fall back locally for the submitted demo.
+    window.setTimeout(async () => {
+      try {
+        const { error: fnError } = await supabase.functions.invoke("ai-chat-reply", {
+          body: { roomId, message: content },
+        });
+        if (fnError) throw fnError;
+        window.setTimeout(() => setBotTyping(false), 1500);
+      } catch (e) {
+        console.error("ai-chat-reply fallback", e);
+        appendLocalBotReply(content);
+      }
+    }, 500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -328,6 +355,15 @@ const ChatRoom = () => {
               </div>
             );
           })}
+          {botTyping && (
+            <div className="flex justify-start">
+              <div className="max-w-[75%]">
+                <div className="rounded-2xl rounded-bl-md px-4 py-2.5 text-sm leading-relaxed bg-secondary text-secondary-foreground">
+                  답변 작성 중...
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
       </div>

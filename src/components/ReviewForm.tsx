@@ -13,7 +13,7 @@ interface Props {
 }
 
 const ReviewForm = ({ barId, onAdded }: Props) => {
-  const { user, profile } = useAuth();
+  const { user, profile, isDemo } = useAuth();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [content, setContent] = useState("");
@@ -32,6 +32,10 @@ const ReviewForm = ({ barId, onAdded }: Props) => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isDemo) {
+      toast.error("리뷰 등록은 실제 이메일 계정으로 로그인한 뒤 사용할 수 있어요");
+      return;
+    }
     if (!rating || !content.trim()) {
       toast.error("별점과 내용을 모두 입력해주세요");
       return;

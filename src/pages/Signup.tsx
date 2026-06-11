@@ -9,6 +9,19 @@ import { toast } from "sonner";
 const jobGroups = ["IT/개발", "마케팅", "금융", "디자인", "기획/PM", "영업", "인사", "기타"];
 const ageRanges = ["20대 초반", "20대 후반", "30대 초반", "30대 중반", "30대 후반", "40대 이상"];
 
+const getSignupErrorMessage = (message: string) => {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("email rate limit")) {
+    return "Supabase 인증 메일 발송 제한에 걸렸어요. 과제 시연용이면 Supabase에서 Confirm email을 끄고 다시 가입해주세요.";
+  }
+  if (normalized.includes("user already registered") || normalized.includes("already registered")) {
+    return "이미 가입된 이메일이에요. 로그인하거나 다른 이메일을 사용해주세요.";
+  }
+
+  return message;
+};
+
 const Signup = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -40,11 +53,11 @@ const Signup = () => {
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(getSignupErrorMessage(error.message));
       return;
     }
     if (!data.session) {
-      toast.success("가입 요청이 완료되었습니다. 이메일 인증 후 로그인해주세요.");
+      toast.success("가입 요청이 완료되었습니다. 이메일 인증이 켜져 있다면 인증 후 로그인해주세요.");
       navigate("/login", { replace: true });
       return;
     }

@@ -8,6 +8,17 @@
 - GitHub Pages `gh-pages` 브랜치 기준 배포 완료
 - 새 Supabase 프로젝트 연결 완료
 
+## 제출 시연용 Supabase Auth 설정
+
+- 과제 시연 안정성을 위해 Supabase Dashboard > Authentication > Providers > Email에서 `Confirm email`을 OFF로 두는 것을 권장합니다.
+- `Confirm email`이 ON이면 회원가입은 완료되어도 이메일 인증 전에는 로그인 세션이 생성되지 않습니다.
+- Supabase 무료 프로젝트는 인증 메일 발송 제한이 있어 `email rate limit exceeded`가 발생할 수 있습니다. 이 경우 과제 시연 중 회원가입/로그인 검증이 막힐 수 있으므로 `Confirm email` OFF 설정이 안전합니다.
+- 기존에 이메일 인증 ON 상태에서 만든 계정은 미인증 상태로 남을 수 있습니다. 설정을 OFF로 바꾼 뒤 기존 테스트 계정을 삭제하고 새로 가입해 로그인 확인하는 것을 권장합니다.
+- URL 설정:
+  - Site URL: `https://leoa4238.github.io/afterwork-unwind`
+  - Redirect URL: `https://leoa4238.github.io/afterwork-unwind/**`
+- Google 로그인은 현재 Supabase Provider가 비활성화되어 있으므로 제출 시연에서는 이메일 로그인 또는 데모 계정을 사용합니다.
+
 ## 완료된 기능
 
 - 홈/탐색/상세/마이페이지 기본 화면 구성
@@ -46,10 +57,7 @@
 ## 남은 작업
 
 - 실제 이메일 계정으로 회원가입/로그인 후 관리자 CRUD 최종 확인
-- Supabase Authentication 설정 확인
-  - Site URL: `https://leoa4238.github.io/afterwork-unwind`
-  - Redirect URL: `https://leoa4238.github.io/afterwork-unwind/**`
-  - 제출 시연용이면 Email Confirm 비활성화 권장
+- Supabase Authentication 설정 최종 확인
 - Edge Function 실제 배포 여부 결정
   - 현재는 fallback으로 발표 가능
   - 실제 서버 AI를 쓰려면 Supabase Edge Functions와 API secrets 설정 필요

@@ -3,9 +3,24 @@ import { Mail, Lock, Loader2, UserRoundCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+
+const getAuthErrorMessage = (message: string) => {
+  const normalized = message.toLowerCase();
+
+  if (message === "Invalid login credentials") {
+    return "이메일 또는 비밀번호가 올바르지 않아요";
+  }
+  if (normalized.includes("email not confirmed")) {
+    return "이메일 인증이 아직 완료되지 않았어요. 인증 메일을 확인하거나 Supabase에서 Confirm email을 꺼주세요.";
+  }
+  if (normalized.includes("email rate limit")) {
+    return "Supabase 인증 메일 발송 제한에 걸렸어요. 잠시 후 다시 시도하거나 Confirm email을 꺼주세요.";
+  }
+
+  return message;
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -24,26 +39,15 @@ const Login = () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(error.message === "Invalid login credentials" ? "이메일 또는 비밀번호가 올바르지 않아요" : error.message);
+      toast.error(getAuthErrorMessage(error.message));
       return;
     }
     toast.success("로그인되었습니다");
     navigate(from, { replace: true });
   };
 
-  const handleGoogle = async () => {
-    setLoading(true);
-    const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + basePath + from,
-    });
-    if (result.error) {
-      setLoading(false);
-      toast.error("Google 로그인에 실패했어요");
-      return;
-    }
-    if (result.redirected) return;
-    navigate(from, { replace: true });
+  const handleGoogle = () => {
+    toast.info("Google 로그인은 현재 비활성화되어 있어요. 이메일 로그인 또는 데모 계정을 사용해주세요.");
   };
 
   const handleDemoLogin = () => {

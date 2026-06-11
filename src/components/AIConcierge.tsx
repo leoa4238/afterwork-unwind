@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Sparkles, Loader2 } from "lucide-react";
 import { sampleBars } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { buildLocalConciergeReply } from "@/lib/localAi";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -83,12 +84,12 @@ const AIConcierge = () => {
         }
       }
     } catch (e) {
+      console.error(e);
+      upsert(buildLocalConciergeReply(text, sampleBars));
       toast({
-        title: "AI 컨시어지 오류",
-        description: e instanceof Error ? e.message : "잠시 후 다시 시도해주세요.",
-        variant: "destructive",
+        title: "로컬 추천으로 전환했어요",
+        description: "새 Supabase에 AI 함수가 없어 브라우저 안에서 답변을 만들었습니다.",
       });
-      setMessages(messages);
     } finally {
       setLoading(false);
     }

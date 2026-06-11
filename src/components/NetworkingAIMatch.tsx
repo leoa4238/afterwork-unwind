@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { buildLocalNetworkMatches } from "@/lib/localAi";
 
 export interface NetworkingProfile {
   id: string;
@@ -43,6 +44,15 @@ const NetworkingAIMatch = ({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
+  const applyResult = (nextResult: Result) => {
+    setResult(nextResult);
+    const map: Record<string, { score: number; reason: string }> = {};
+    nextResult.matches.forEach((m) => {
+      map[m.user_id] = { score: m.match_score, reason: m.reason };
+    });
+    onMatched(map);
+  };
+
   const run = async (text: string) => {
     if (!text.trim()) return;
     setLoading(true);
@@ -64,17 +74,13 @@ const NetworkingAIMatch = ({
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      setResult(data as Result);
-      const map: Record<string, { score: number; reason: string }> = {};
-      (data as Result).matches.forEach((m) => {
-        map[m.user_id] = { score: m.match_score, reason: m.reason };
-      });
-      onMatched(map);
+      applyResult(data as Result);
     } catch (e) {
+      console.error(e);
+      applyResult(buildLocalNetworkMatches(text, users));
       toast({
-        title: "AI 매칭 실패",
-        description: e instanceof Error ? e.message : "잠시 후 다시 시도해주세요.",
-        variant: "destructive",
+        title: "로컬 매칭으로 전환했어요",
+        description: "새 Supabase에 AI 함수가 없어 브라우저 안에서 매칭을 계산했습니다.",
       });
     } finally {
       setLoading(false);
