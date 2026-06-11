@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, MessageCircle, Shield, MapPin, Sparkles, Loader2 } from "lucide-react";
+import { Users, MessageCircle, Shield, MapPin, Sparkles, Loader2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import BottomNav from "@/components/BottomNav";
 import NotificationBell from "@/components/NotificationBell";
 import NetworkingAIMatch, { type NetworkingProfile } from "@/components/NetworkingAIMatch";
+import UserProfileDialog from "@/components/UserProfileDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { createDemoRoom, demoNetworkingProfiles } from "@/lib/demoAuth";
@@ -179,10 +180,28 @@ const Networking = () => {
                       )}
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-2 flex-1 min-w-0">
-                          <div>
-                            <h3 className="font-semibold text-foreground">{u.nickname}</h3>
-                            <p className="text-xs text-muted-foreground">{u.job_group} · {u.age_range}</p>
-                          </div>
+                          <UserProfileDialog
+                            profile={u}
+                            onStartChat={() => requestChat(u)}
+                            chatLoading={requesting === u.id}
+                            chatDisabled={requesting === u.id}
+                            trigger={
+                              <button
+                                type="button"
+                                className="group flex w-full items-center gap-3 rounded-lg text-left transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                aria-label={`${u.nickname} 프로필 보기`}
+                              >
+                                <div className="w-11 h-11 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/15">
+                                  <UserRound className="w-5 h-5 text-primary" />
+                                </div>
+                                <div className="min-w-0">
+                                  <h3 className="font-semibold text-foreground truncate">{u.nickname}</h3>
+                                  <p className="text-xs text-muted-foreground truncate">{u.job_group} · {u.age_range}</p>
+                                  <p className="text-[11px] text-primary mt-0.5">프로필 보기</p>
+                                </div>
+                              </button>
+                            }
+                          />
                           {u.area && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <MapPin className="w-3 h-3" />

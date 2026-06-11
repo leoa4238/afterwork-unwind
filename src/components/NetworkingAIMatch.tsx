@@ -9,11 +9,14 @@ import { buildLocalNetworkMatches } from "@/lib/localAi";
 
 export interface NetworkingProfile {
   id: string;
+  user_id?: string | null;
   nickname: string;
   age_range: string | null;
   job_group: string | null;
   area: string | null;
   talk_topics: string[];
+  available_now?: boolean | null;
+  networking_enabled?: boolean | null;
 }
 
 interface Match {

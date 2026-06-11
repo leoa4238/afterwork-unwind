@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Send, Shield, AlertTriangle, Clock } from "lucide-react";
+import { ArrowLeft, Send, Shield, AlertTriangle, Clock, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import ReportDialog from "@/components/ReportDialog";
 import BlockDialog from "@/components/BlockDialog";
+import UserProfileDialog, { type UserProfilePreview } from "@/components/UserProfileDialog";
 import { useAuth } from "@/hooks/useAuth";
-import { addDemoMessage, DEMO_USER_ID, getDemoMessages, getDemoRooms } from "@/lib/demoAuth";
+import { addDemoMessage, DEMO_USER_ID, demoNetworkingProfiles, getDemoMessages, getDemoRooms } from "@/lib/demoAuth";
 import { buildLocalChatReply } from "@/lib/localAi";
 
 interface Message {
@@ -35,6 +36,7 @@ const ChatRoom = () => {
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [otherNickname, setOtherNickname] = useState<string>("");
+  const [otherProfile, setOtherProfile] = useState<UserProfilePreview | null>(null);
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
   const [sending, setSending] = useState(false);
@@ -67,6 +69,13 @@ const ChatRoom = () => {
       if (demoRoom) {
         setRoom(demoRoom);
         setOtherNickname(demoRoom.other_nickname);
+        const demoProfile = demoNetworkingProfiles.find((item) => item.user_id === demoRoom.user2_id || item.id === demoRoom.user2_id);
+        setOtherProfile(demoProfile ?? {
+          id: demoRoom.user2_id,
+          user_id: demoRoom.user2_id,
+          nickname: demoRoom.other_nickname,
+          talk_topics: [],
+        });
         setIsExpired(demoRoom.is_expired || new Date(demoRoom.expires_at) <= new Date());
       }
       return;
@@ -85,12 +94,18 @@ const ChatRoom = () => {
     fetchRoom();
   }, [roomId, isDemo]);
 
-  // Fetch other user's nickname
+  // Fetch other user's profile
   useEffect(() => {
     if (isDemo) return;
     if (!otherUserId) return;
-    supabase.from("profiles").select("nickname").eq("user_id", otherUserId).maybeSingle().then(({ data }) => {
-      if (data?.nickname) setOtherNickname(data.nickname);
+    supabase
+      .from("profiles")
+      .select("id, user_id, nickname, age_range, job_group, area, talk_topics, available_now, networking_enabled")
+      .eq("user_id", otherUserId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.nickname) setOtherNickname(data.nickname);
+        setOtherProfile((data as UserProfilePreview | null) ?? null);
     });
   }, [otherUserId, isDemo]);
 
@@ -263,15 +278,33 @@ const ChatRoom = () => {
             <Link to="/chat" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
               <ArrowLeft className="w-4 h-4 text-foreground" />
             </Link>
-            <div>
-              <h1 className="text-sm font-semibold text-foreground">{otherNickname || "1:1 대화"}</h1>
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3 text-muted-foreground" />
-                <span className={`text-xs ${isExpired ? "text-destructive" : "text-muted-foreground"}`}>
-                  {timeLeft || "계산 중..."}
-                </span>
-              </div>
-            </div>
+            <UserProfileDialog
+              profile={otherProfile ?? {
+                user_id: otherUserId,
+                nickname: otherNickname || "1:1 대화",
+                talk_topics: [],
+              }}
+              trigger={
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-lg text-left transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  aria-label="상대 프로필 보기"
+                >
+                  <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <UserRound className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-sm font-semibold text-foreground">{otherNickname || "1:1 대화"}</h1>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-muted-foreground" />
+                      <span className={`text-xs ${isExpired ? "text-destructive" : "text-muted-foreground"}`}>
+                        {timeLeft || "계산 중..."}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              }
+            />
           </div>
           <div className="flex gap-2 items-center">
             <button
