@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Wine, Loader2, ArrowLeft, Sparkles, CheckCircle2, AlertCircle, ExternalLink, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 interface CrawlResult {
@@ -19,18 +20,154 @@ interface CrawlResult {
   tags: string[];
 }
 
+interface ManualBar {
+  id: string;
+  name: string;
+  address: string;
+  area: string;
+  category: string;
+  price_range: string;
+  solo_friendly_score: number;
+  quiet_score: number;
+  networking_friendly: boolean;
+  ai_summary: string;
+  tags: string;
+}
+
 const PRESETS = [
   { label: "다이닝코드 예시", url: "https://www.diningcode.com/profile.php?rid=2gC60O3eFn5K" },
   { label: "망고플레이트 예시", url: "https://www.mangoplate.com/restaurants/CJUjUQwcCQ" },
 ];
 
 const Admin = () => {
+  const { isDemo } = useAuth();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<string | null>(null);
   const [history, setHistory] = useState<CrawlResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [manualLoading, setManualLoading] = useState(false);
+  const [manualBars, setManualBars] = useState<CrawlResult[]>([]);
+  const [manualBar, setManualBar] = useState<ManualBar>({
+    id: "",
+    name: "",
+    address: "",
+    area: "성수",
+    category: "위스키바",
+    price_range: "₩₩",
+    solo_friendly_score: 4,
+    quiet_score: 4,
+    networking_friendly: false,
+    ai_summary: "",
+    tags: "혼자 가기 편함, 조용한 편",
+  });
+
+  const loadManualBars = async () => {
+    const { data } = await supabase
+      .from("bars")
+      .select("id, name, address, area, category, ai_summary, rating")
+      .order("created_at", { ascending: false })
+      .limit(8);
+    setManualBars((data || []).map((bar: any) => ({ ...bar, tags: [] })));
+  };
+
+  useEffect(() => {
+    loadManualBars();
+  }, []);
+
+  const handleManualChange = (field: keyof ManualBar, value: string | number | boolean) => {
+    setManualBar((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const resetManualForm = () => {
+    setManualBar({
+      id: "",
+      name: "",
+      address: "",
+      area: "성수",
+      category: "위스키바",
+      price_range: "₩₩",
+      solo_friendly_score: 4,
+      quiet_score: 4,
+      networking_friendly: false,
+      ai_summary: "",
+      tags: "혼자 가기 편함, 조용한 편",
+    });
+  };
+
+  const handleManualSave = async () => {
+    if (isDemo) {
+      toast.error("Supabase CRUD는 실제 계정 로그인 후 사용할 수 있어요");
+      return;
+    }
+    if (!manualBar.name.trim() || !manualBar.address.trim() || !manualBar.ai_summary.trim()) {
+      toast.error("이름, 주소, AI 요약은 필수입니다");
+      return;
+    }
+
+    setManualLoading(true);
+    const id = manualBar.id || `manual-${Date.now()}`;
+    const { error: barError } = await supabase.from("bars").upsert({
+      id,
+      name: manualBar.name.trim(),
+      address: manualBar.address.trim(),
+      area: manualBar.area.trim(),
+      category: manualBar.category.trim(),
+      price_range: manualBar.price_range,
+      is_open_now: true,
+      solo_friendly_score: manualBar.solo_friendly_score * 20,
+      quiet_score: manualBar.quiet_score * 20,
+      networking_friendly: manualBar.networking_friendly,
+      ai_summary: manualBar.ai_summary.trim(),
+      rating: 4.5,
+      review_count: 0,
+      distance: "",
+      image_key: "whiskey",
+    });
+
+    if (barError) {
+      setManualLoading(false);
+      toast.error("바 저장 실패: " + barError.message);
+      return;
+    }
+
+    await supabase.from("bar_tags").delete().eq("bar_id", id);
+    const tags = manualBar.tags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+      .slice(0, 8);
+    if (tags.length) {
+      const { error: tagError } = await supabase
+        .from("bar_tags")
+        .insert(tags.map((tag) => ({ bar_id: id, tag })));
+      if (tagError) {
+        setManualLoading(false);
+        toast.error("태그 저장 실패: " + tagError.message);
+        return;
+      }
+    }
+
+    setManualLoading(false);
+    toast.success("Supabase에 바가 저장되었습니다");
+    resetManualForm();
+    loadManualBars();
+  };
+
+  const handleManualDelete = async (id: string) => {
+    if (isDemo) {
+      toast.error("Supabase CRUD는 실제 계정 로그인 후 사용할 수 있어요");
+      return;
+    }
+    const { error } = await supabase.from("bars").delete().eq("id", id);
+    if (error) {
+      toast.error("삭제 실패: " + error.message);
+      return;
+    }
+    toast.success("삭제되었습니다");
+    loadManualBars();
+  };
 
   const handleCrawl = async (targetUrl?: string) => {
     const u = (targetUrl ?? url).trim();
@@ -165,6 +302,118 @@ const Admin = () => {
               <span>{error}</span>
             </div>
           )}
+        </Card>
+
+        {/* Manual Supabase CRUD */}
+        <Card className="p-6 space-y-4 bg-card/60 border-border">
+          <div className="flex items-center gap-2">
+            <Wine className="w-5 h-5 text-primary" />
+            <h2 className="font-serif text-xl">Supabase 수동 바 등록 CRUD</h2>
+            <Badge variant="outline" className="ml-auto text-xs">실제 DB</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Firecrawl/AI 키가 없어도 직접 입력한 바 정보를 <code>bars</code>, <code>bar_tags</code> 테이블에 저장합니다.
+            실제 Supabase 로그인 세션이 필요합니다.
+          </p>
+          {isDemo && (
+            <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-primary">
+              현재는 데모 로그인 상태입니다. Supabase CRUD 테스트는 회원가입/이메일 로그인 후 다시 시도해주세요.
+            </div>
+          )}
+          <div className="grid gap-3 md:grid-cols-2">
+            <Input
+              value={manualBar.name}
+              onChange={(e) => handleManualChange("name", e.target.value)}
+              placeholder="바 이름"
+            />
+            <Input
+              value={manualBar.address}
+              onChange={(e) => handleManualChange("address", e.target.value)}
+              placeholder="주소"
+            />
+            <Input
+              value={manualBar.area}
+              onChange={(e) => handleManualChange("area", e.target.value)}
+              placeholder="지역"
+            />
+            <Input
+              value={manualBar.category}
+              onChange={(e) => handleManualChange("category", e.target.value)}
+              placeholder="카테고리"
+            />
+            <Input
+              value={manualBar.price_range}
+              onChange={(e) => handleManualChange("price_range", e.target.value)}
+              placeholder="가격대"
+            />
+            <Input
+              value={manualBar.tags}
+              onChange={(e) => handleManualChange("tags", e.target.value)}
+              placeholder="태그, 쉼표로 구분"
+            />
+          </div>
+          <Textarea
+            value={manualBar.ai_summary}
+            onChange={(e) => handleManualChange("ai_summary", e.target.value)}
+            placeholder="AI 요약/소개 문구"
+            className="min-h-[80px]"
+          />
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="text-xs text-muted-foreground">
+              혼술 적합도
+              <Input
+                type="number"
+                min={1}
+                max={5}
+                value={manualBar.solo_friendly_score}
+                onChange={(e) => handleManualChange("solo_friendly_score", Number(e.target.value))}
+                className="mt-1"
+              />
+            </label>
+            <label className="text-xs text-muted-foreground">
+              조용함
+              <Input
+                type="number"
+                min={1}
+                max={5}
+                value={manualBar.quiet_score}
+                onChange={(e) => handleManualChange("quiet_score", Number(e.target.value))}
+                className="mt-1"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground pt-5">
+              <input
+                type="checkbox"
+                checked={manualBar.networking_friendly}
+                onChange={(e) => handleManualChange("networking_friendly", e.target.checked)}
+              />
+              네트워킹 적합
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={resetManualForm} disabled={manualLoading}>
+              초기화
+            </Button>
+            <Button onClick={handleManualSave} disabled={manualLoading || isDemo}>
+              {manualLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+              Supabase 저장
+            </Button>
+          </div>
+
+          <div className="border-t border-border pt-4 space-y-2">
+            <p className="text-sm font-medium">최근 등록된 바</p>
+            {manualBars.map((bar) => (
+              <div key={bar.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{bar.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{bar.area} · {bar.category}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => handleManualDelete(bar.id)} disabled={isDemo}>
+                  삭제
+                </Button>
+              </div>
+            ))}
+          </div>
         </Card>
 
         {/* Seoul Bulk Crawl */}

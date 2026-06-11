@@ -26,7 +26,7 @@ const Signup = () => {
     }
     setLoading(true);
     const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -41,6 +41,11 @@ const Signup = () => {
     setLoading(false);
     if (error) {
       toast.error(error.message);
+      return;
+    }
+    if (!data.session) {
+      toast.success("가입 요청이 완료되었습니다. 이메일 인증 후 로그인해주세요.");
+      navigate("/login", { replace: true });
       return;
     }
     toast.success("가입 완료! 바로 시작할 수 있어요");
