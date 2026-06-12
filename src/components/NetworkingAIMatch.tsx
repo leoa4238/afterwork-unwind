@@ -67,7 +67,7 @@ const NetworkingAIMatch = ({
         jobGroup: u.job_group,
         ageRange: u.age_range,
         area: u.area,
-        talkTopics: u.talk_topics,
+        talkTopics: u.talk_topics ?? [],
       }));
       const { data, error } = await supabase.functions.invoke("ai-match-network", {
         body: {

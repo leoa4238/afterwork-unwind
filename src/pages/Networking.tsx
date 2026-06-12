@@ -164,6 +164,9 @@ const Networking = () => {
 
                 {orderedUsers.map((u, i) => {
                   const m = aiMatches[u.id];
+                  const jobGroup = u.job_group?.trim() || "직무 미설정";
+                  const ageRange = u.age_range?.trim() || "연령대 미설정";
+                  const topics = u.talk_topics ?? [];
                   return (
                     <div
                       key={u.id}
@@ -196,7 +199,7 @@ const Networking = () => {
                                 </div>
                                 <div className="min-w-0">
                                   <h3 className="font-semibold text-foreground truncate">{u.nickname}</h3>
-                                  <p className="text-xs text-muted-foreground truncate">{u.job_group} · {u.age_range}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{jobGroup} · {ageRange}</p>
                                   <p className="text-[11px] text-primary mt-0.5">프로필 보기</p>
                                 </div>
                               </button>
@@ -209,7 +212,7 @@ const Networking = () => {
                             </div>
                           )}
                           <div className="flex flex-wrap gap-1.5">
-                            {u.talk_topics.map(topic => (
+                            {topics.map(topic => (
                               <Badge key={topic} variant="secondary" className="text-xs bg-secondary border-0 text-secondary-foreground">
                                 {topic}
                               </Badge>

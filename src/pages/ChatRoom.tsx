@@ -245,10 +245,20 @@ const ChatRoom = () => {
     // Prefer the server-side AI reply when deployed; fall back locally for the submitted demo.
     window.setTimeout(async () => {
       try {
-        const { error: fnError } = await supabase.functions.invoke("ai-chat-reply", {
+        const { data: fnData, error: fnError } = await supabase.functions.invoke("ai-chat-reply", {
           body: { roomId, message: content },
         });
         if (fnError) throw fnError;
+        if (fnData?.message) {
+          const reply = fnData.message as Message;
+          setMessages((prev) => (prev.some((m) => m.id === reply.id) ? prev : [...prev, reply]));
+          setBotTyping(false);
+          return;
+        }
+        if (fnData?.skipped) {
+          appendLocalBotReply(content);
+          return;
+        }
         window.setTimeout(() => setBotTyping(false), 1500);
       } catch (e) {
         console.error("ai-chat-reply fallback", e);

@@ -71,6 +71,13 @@ const LOCAL_CRAWL_SEEDS = [
   },
 ];
 
+const getBarCrudErrorMessage = (message: string) => {
+  if (message.toLowerCase().includes("row-level security")) {
+    return "Supabase RLS 정책 때문에 저장이 막혔어요. outputs/supabase-bar-crud-policy.sql을 Supabase SQL Editor에서 실행해주세요.";
+  }
+  return message;
+};
+
 const buildLocalCrawlResult = (sourceUrl: string, index = 0): CrawlResult => {
   const seed = LOCAL_CRAWL_SEEDS[index % LOCAL_CRAWL_SEEDS.length];
   const host = (() => {
@@ -183,7 +190,7 @@ const Admin = () => {
 
     if (barError) {
       setManualLoading(false);
-      toast.error("바 저장 실패: " + barError.message);
+      toast.error("바 저장 실패: " + getBarCrudErrorMessage(barError.message));
       return;
     }
 
@@ -199,15 +206,54 @@ const Admin = () => {
         .insert(tags.map((tag) => ({ bar_id: id, tag })));
       if (tagError) {
         setManualLoading(false);
-        toast.error("태그 저장 실패: " + tagError.message);
+        toast.error("태그 저장 실패: " + getBarCrudErrorMessage(tagError.message));
         return;
       }
     }
 
     setManualLoading(false);
     toast.success("Supabase에 바가 저장되었습니다");
+    setManualBars((prev) => [
+      {
+        id,
+        name: manualBar.name.trim(),
+        address: manualBar.address.trim(),
+        area: manualBar.area.trim(),
+        category: manualBar.category.trim(),
+        ai_summary: manualBar.ai_summary.trim(),
+        rating: 4.5,
+        tags,
+      },
+      ...prev.filter((bar) => bar.id !== id),
+    ].slice(0, 8));
     resetManualForm();
-    loadManualBars();
+  };
+
+  const handleManualEdit = async (id: string) => {
+    const [{ data: bar }, { data: tags }] = await Promise.all([
+      supabase.from("bars").select("*").eq("id", id).maybeSingle(),
+      supabase.from("bar_tags").select("tag").eq("bar_id", id),
+    ]);
+
+    if (!bar) {
+      toast.error("수정할 바 정보를 찾지 못했어요");
+      return;
+    }
+
+    setManualBar({
+      id: bar.id,
+      name: bar.name,
+      address: bar.address,
+      area: bar.area,
+      category: bar.category,
+      price_range: bar.price_range,
+      solo_friendly_score: Math.max(1, Math.round((bar.solo_friendly_score || 20) / 20)),
+      quiet_score: Math.max(1, Math.round((bar.quiet_score || 20) / 20)),
+      networking_friendly: bar.networking_friendly,
+      ai_summary: bar.ai_summary || "",
+      tags: (tags || []).map((item) => item.tag).join(", "),
+    });
+    toast.info("선택한 바 정보를 수정 폼에 불러왔어요");
   };
 
   const handleManualDelete = async (id: string) => {
@@ -217,7 +263,7 @@ const Admin = () => {
     }
     const { error } = await supabase.from("bars").delete().eq("id", id);
     if (error) {
-      toast.error("삭제 실패: " + error.message);
+      toast.error("삭제 실패: " + getBarCrudErrorMessage(error.message));
       return;
     }
     toast.success("삭제되었습니다");
@@ -523,9 +569,14 @@ const Admin = () => {
                   <p className="text-sm font-medium truncate">{bar.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{bar.area} · {bar.category}</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => handleManualDelete(bar.id)} disabled={isDemo}>
-                  삭제
-                </Button>
+                <div className="flex shrink-0 gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleManualEdit(bar.id)}>
+                    수정
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleManualDelete(bar.id)} disabled={isDemo}>
+                    삭제
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
