@@ -20,12 +20,44 @@ GitHub 저장소: https://github.com/leoa4238/afterwork-unwind
 - 네트워킹/채팅/AI 기능은 실제 DB 연동과 시연용 demo/fallback이 함께 들어가 있음
 - Supabase Edge Function이 없어도 화면이 멈추지 않도록 브라우저 로컬 fallback 적용
 - `.env`는 로컬에만 있고 깃에는 올리지 않음
+- 2026-06-12 기준 회원가입/로그인, 프로필 저장, 리뷰 작성, 네트워킹, 채팅 자동 응답 fallback까지 로컬 브라우저와 Supabase 실제 DB로 검증 완료
+- 관리자 CRUD UI는 등록/수정/삭제 흐름까지 보강했으며, 실제 Supabase 프로젝트에서 RLS 정책이 막힐 경우 `outputs/supabase-bar-crud-policy.sql`을 SQL Editor에서 실행해야 함
 
 중요한 점:
 
 - 전부 Mockup 데이터만 쓰는 상태는 아님
 - 바 목록, 상세, 리뷰, 관리자 CRUD, 실제 계정 채팅방/메시지는 Supabase DB와 연결됨
 - 데모 로그인, 데모 네트워킹, AI 자동 응답 일부는 과제 시연 안정성을 위한 샘플/fallback 성격임
+
+## 2026-06-12 최종 진행상황 업데이트
+
+최근 처리 완료:
+
+- 실제 Supabase Auth 회원가입/로그인 검증 완료
+- 회원가입 직후 `profiles` row가 없을 때 자동 보강하는 `ensureUserProfile` 흐름 추가
+- 로그인 후 마이페이지에서 닉네임, 직무, 연령대가 정상 표시되는지 확인
+- `/explore` 바 목록 조회와 AI 큐레이터 표시 확인
+- `/bar/:id` 상세 페이지, AI 인사이트 fallback, 리뷰 작성 확인
+- `/networking` 네트워킹 ON/OFF, 사용자 목록, 프로필 모달 확인
+- 프로필 모달에서 대화 요청 후 `/chat/:roomId` 진입 확인
+- 채팅 메시지 전송 후 Edge Function이 응답을 생략하거나 실패해도 로컬 자동 응답이 표시되도록 수정
+- `/chat` 목록에서 최근 메시지 표시 확인
+- `/admin` 수동 바 등록/수정/삭제 UI 보강
+- 관리자 CRUD가 Supabase RLS 정책에 막힐 때 실행할 정책 SQL 추가
+- `main`과 `gh-pages` 모두 최신 상태로 푸시 및 배포 확인
+
+최신 배포 상태:
+
+- 배포 링크: https://leoa4238.github.io/afterwork-unwind/
+- main 최신 커밋: `8009c8b` — `Stabilize demo operation flows`
+- gh-pages 최신 배포 커밋: `3133224` — `Deploy stabilized operation flows`
+- 배포 HTML이 최신 번들 `index-Y2NIVE_q.js`를 참조하는 것 확인
+
+남은 조치:
+
+- Supabase Dashboard > SQL Editor에서 `outputs/supabase-bar-crud-policy.sql`을 실행해야 현재 Supabase 프로젝트의 `/admin` 바 등록/수정/삭제가 실제로 열림
+- `npm run lint`는 기존 코드의 `any` 타입, shadcn/ui 템플릿 export 경고 등으로 아직 실패함. 제출 기능 동작에는 직접 영향은 없지만 추후 정리 권장
+- 검증 중 생성된 `codex-...@example.com` 테스트 계정과 일부 채팅방은 Supabase Dashboard에서 필요 없으면 삭제 가능
 
 ## 기말평가 제출 방안
 
@@ -215,15 +247,16 @@ AI 기능별 입력/출력:
 
 ### 제출 전 체크리스트
 
-- 배포 링크 접속 확인
+- 배포 링크 접속 확인 완료
 - Supabase 프로젝트가 삭제/정지되지 않았는지 확인
 - Supabase Auth `Confirm email` OFF 확인
-- 테스트 계정 또는 데모 로그인 흐름 확인
-- `/explore` 바 목록 표시 확인
-- 바 상세 페이지 리뷰/AI 인사이트 확인
-- 네트워킹 화면 사용자 카드 및 프로필 모달 확인
-- 채팅방 메시지 전송 확인
-- `/admin` 관리자 CRUD 확인
+- 테스트 계정 또는 데모 로그인 흐름 확인 완료
+- `/explore` 바 목록 표시 확인 완료
+- 바 상세 페이지 리뷰/AI 인사이트 확인 완료
+- 네트워킹 화면 사용자 카드 및 프로필 모달 확인 완료
+- 채팅방 메시지 전송 및 자동 응답 fallback 확인 완료
+- `/admin` 관리자 CRUD UI 확인 완료
+- `/admin` 실제 DB 쓰기 전 Supabase RLS 정책 SQL 적용 필요: `outputs/supabase-bar-crud-policy.sql`
 - PPT에 배포 링크와 테스트 계정/데모 로그인 안내 포함
 - PPT에서 실제 DB 연동과 demo/fallback을 명확히 구분
 
@@ -305,7 +338,9 @@ AI 기능별 입력/출력:
 
 - `/admin`
 - 로그인 필요
-- Supabase `bars`, `bar_tags`에 직접 바 등록, 수정, 삭제 가능
+- Supabase `bars`, `bar_tags`에 직접 바 등록, 수정, 삭제 가능하도록 UI 구현
+- 현재 Supabase 프로젝트에서 RLS 정책이 막혀 있으면 저장 시 정책 안내 toast가 표시됨
+- 실제 DB 등록/수정/삭제를 열려면 Supabase SQL Editor에서 `outputs/supabase-bar-crud-policy.sql` 실행 필요
 - 다이닝코드 URL 입력형 크롤러 UI가 있으나, 실제 외부 크롤링 서버가 없을 때는 수동 등록/fallback 중심으로 사용
 - 데모 계정 상태에서는 실제 DB 쓰기를 안내 후 제한
 
@@ -414,6 +449,10 @@ npm test
 
 - `npm run build` 통과
 - `npm test` 통과
+- 인앱 브라우저에서 회원가입, 로그인, 마이페이지 프로필 표시 검증 완료
+- `/explore`, `/bar/:id`, 리뷰 작성, 네트워킹, 프로필 모달, 채팅방 생성, 메시지 전송, 자동 응답 fallback 검증 완료
+- `/admin` UI와 RLS 안내 검증 완료
+- `npm run lint`는 기존 코드 스타일 이슈로 실패함
 
 ## GitHub Pages 배포 방식
 
@@ -521,6 +560,7 @@ Remove-Item Env:\GITHUB_PAGES
 - 실제 사용자가 많지 않아 네트워킹 데이터는 데모/샘플 의존도가 있음
 - Supabase Edge Function이 실제 배포되지 않은 AI 기능은 로컬 fallback으로 동작
 - Google 로그인 Provider는 비활성화 상태
+- 현재 연결된 Supabase 프로젝트에서 관리자 CRUD RLS 정책이 적용되지 않으면 `/admin` DB 쓰기가 막힘
 - 실제 운영 수준의 신고/차단/매너 점수/예약 기능은 추가 고도화 필요
 
 향후 고도화:
@@ -544,6 +584,9 @@ Remove-Item Env:\GITHUB_PAGES
 
 ## 최근 주요 커밋
 
+- `8009c8b`: 전체 운영 흐름 안정화, 채팅 fallback 보강, 관리자 CRUD 안내/수정 UI 추가
+- `b6812a3`: Supabase 회원가입 후 프로필 저장/복구 흐름 보강
+- `7d20d58`: 기말평가 제출 계획 README 정리
 - `1bf76ca`: Auth 안내 및 데모/fallback 흐름 개선
 - `c01a55c`: 네트워킹 사용자 프로필 모달 추가
 - `f791b36`: 프로필 모달 포함 GitHub Pages 배포
