@@ -5,22 +5,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-
-const getAuthErrorMessage = (message: string) => {
-  const normalized = message.toLowerCase();
-
-  if (message === "Invalid login credentials") {
-    return "이메일 또는 비밀번호가 올바르지 않아요";
-  }
-  if (normalized.includes("email not confirmed")) {
-    return "이메일 인증이 아직 완료되지 않았어요. 인증 메일을 확인하거나 Supabase에서 Confirm email을 꺼주세요.";
-  }
-  if (normalized.includes("email rate limit")) {
-    return "Supabase 인증 메일 발송 제한에 걸렸어요. 잠시 후 다시 시도하거나 Confirm email을 꺼주세요.";
-  }
-
-  return message;
-};
+import { getLoginAuthErrorMessage } from "@/lib/authMessages";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -39,7 +24,7 @@ const Login = () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(getAuthErrorMessage(error.message));
+      toast.error(getLoginAuthErrorMessage(error.message));
       return;
     }
     toast.success("로그인되었습니다");

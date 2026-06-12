@@ -5,25 +5,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getSignupAuthErrorMessage } from "@/lib/authMessages";
+import { ensureUserProfile } from "@/lib/authProfile";
+import { useAuth } from "@/hooks/useAuth";
 
 const jobGroups = ["IT/개발", "마케팅", "금융", "디자인", "기획/PM", "영업", "인사", "기타"];
 const ageRanges = ["20대 초반", "20대 후반", "30대 초반", "30대 중반", "30대 후반", "40대 이상"];
 
-const getSignupErrorMessage = (message: string) => {
-  const normalized = message.toLowerCase();
-
-  if (normalized.includes("email rate limit")) {
-    return "Supabase 인증 메일 발송 제한에 걸렸어요. 과제 시연용이면 Supabase에서 Confirm email을 끄고 다시 가입해주세요.";
-  }
-  if (normalized.includes("user already registered") || normalized.includes("already registered")) {
-    return "이미 가입된 이메일이에요. 로그인하거나 다른 이메일을 사용해주세요.";
-  }
-
-  return message;
-};
-
 const Signup = () => {
   const navigate = useNavigate();
+  const { refreshProfile } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
@@ -51,16 +42,30 @@ const Signup = () => {
         },
       },
     });
-    setLoading(false);
     if (error) {
-      toast.error(getSignupErrorMessage(error.message));
+      setLoading(false);
+      toast.error(getSignupAuthErrorMessage(error.message));
       return;
     }
     if (!data.session) {
+      setLoading(false);
       toast.success("가입 요청이 완료되었습니다. 이메일 인증이 켜져 있다면 인증 후 로그인해주세요.");
       navigate("/login", { replace: true });
       return;
     }
+    if (data.user) {
+      const { error: profileError } = await ensureUserProfile(data.user, {
+        nickname,
+        ageRange: selectedAge,
+        jobGroup: selectedJob,
+      });
+
+      if (profileError) {
+        toast.warning("가입은 완료됐지만 프로필 저장 확인에 실패했어요. 로그인 후 마이페이지에서 다시 확인해주세요.");
+      }
+    }
+    await refreshProfile();
+    setLoading(false);
     toast.success("가입 완료! 바로 시작할 수 있어요");
     navigate("/explore", { replace: true });
   };

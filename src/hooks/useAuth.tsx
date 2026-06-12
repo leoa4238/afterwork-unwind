@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 import { demoProfile, demoUser, isDemoAuthEnabled, setDemoAuthEnabled } from "@/lib/demoAuth";
+import { ensureUserProfile } from "@/lib/authProfile";
 
 interface Profile {
   id: string;
@@ -43,39 +44,72 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isDemo, setIsDemo] = useState(() => isDemoAuthEnabled());
 
-  const loadProfile = async (userId: string) => {
-    const { data } = await supabase
+  const loadProfile = async (user: User) => {
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .maybeSingle();
-    setProfile((data as Profile) ?? null);
+
+    if (data) {
+      setProfile(data as Profile);
+      return;
+    }
+
+    if (error) {
+      console.warn("Failed to load user profile", error);
+      setProfile(null);
+      return;
+    }
+
+    const { data: createdProfile, error: createError } = await ensureUserProfile(user);
+    if (createError) {
+      console.warn("Failed to create missing user profile", createError);
+      setProfile(null);
+      return;
+    }
+    setProfile((createdProfile as Profile) ?? null);
   };
 
   useEffect(() => {
+    let active = true;
+
     if (isDemo) {
       setSession(null);
       setProfile(demoProfile as Profile);
       setLoading(false);
-      return;
+      return () => {
+        active = false;
+      };
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+      setLoading(true);
       setSession(s);
       if (s?.user) {
-        setTimeout(() => loadProfile(s.user.id), 0);
+        setTimeout(() => {
+          loadProfile(s.user).finally(() => {
+            if (active) setLoading(false);
+          });
+        }, 0);
       } else {
         setProfile(null);
+        setLoading(false);
       }
     });
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
-      if (data.session?.user) loadProfile(data.session.user.id);
-      setLoading(false);
+      if (data.session?.user) {
+        await loadProfile(data.session.user);
+      }
+      if (active) setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, [isDemo]);
 
   const signInDemo = () => {
@@ -98,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfile(demoProfile as Profile);
       return;
     }
-    if (session?.user) await loadProfile(session.user.id);
+    if (session?.user) await loadProfile(session.user);
   };
 
   return (
