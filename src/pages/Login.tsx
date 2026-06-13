@@ -94,7 +94,7 @@ const Login = () => {
         </Button>
 
         <p className="text-xs text-muted-foreground text-center leading-relaxed">
-          과제 시연용 데모 계정입니다. 네트워킹, 채팅, 마이페이지 화면을 바로 확인할 수 있어요.
+          빠른 체험용 계정입니다. 네트워킹, 채팅, 마이페이지 화면을 바로 확인할 수 있어요.
         </p>
 
         <div className="text-center">

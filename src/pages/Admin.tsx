@@ -328,13 +328,13 @@ const Admin = () => {
         setHistory((prev) => [bar, ...prev]);
         setUrl("");
         const msg = isDemo
-          ? "AI 크롤러 함수가 없어 데모용 추정 결과를 화면에 표시했어요."
-          : "AI 크롤러 함수가 없어 로컬 추정 결과를 Supabase에 저장했어요.";
+          ? "데모용 추정 결과를 화면에 표시했어요."
+          : "입력 보조 결과를 Supabase에 저장했어요.";
         setError(msg);
         toast.success(msg);
         loadManualBars();
       } catch (fallbackError) {
-        const msg = (fallbackError as Error).message || "크롤링 저장 실패";
+        const msg = (fallbackError as Error).message || "저장 실패";
         setError(msg);
         toast.error(msg);
       }
@@ -346,7 +346,7 @@ const Admin = () => {
   const handleSeoulBulk = async () => {
     setBulkLoading(true);
     setError(null);
-    setBulkStatus("서울 바 검색 → 스크랩 → AI 추출 중... (1~3분 소요)");
+    setBulkStatus("서울 바 후보 확인 → 정보 정리 중... (1~3분 소요)");
     try {
       const { data, error: fnErr } = await supabase.functions.invoke("crawl-bar", {
         body: { bulk: true, limit: 12, perQuery: 3 },
@@ -367,13 +367,13 @@ const Admin = () => {
         await Promise.all(bars.map((bar) => saveCrawledBar(bar)));
         setHistory((prev) => [...bars, ...prev]);
         const msg = isDemo
-          ? `AI 크롤러 함수가 없어 데모용 서울 바 ${bars.length}개를 화면에 표시했어요.`
-          : `AI 크롤러 함수가 없어 로컬 추정 서울 바 ${bars.length}개를 Supabase에 저장했어요.`;
+          ? `데모용 서울 바 ${bars.length}개를 화면에 표시했어요.`
+          : `서울 바 ${bars.length}개를 Supabase에 저장했어요.`;
         setBulkStatus(msg);
         toast.success(msg);
         loadManualBars();
       } catch (fallbackError) {
-        const msg = (fallbackError as Error).message || "벌크 크롤링 저장 실패";
+        const msg = (fallbackError as Error).message || "일괄 저장 실패";
         setError(msg);
         toast.error(msg);
       }
@@ -391,7 +391,7 @@ const Admin = () => {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <Wine className="w-6 h-6 text-primary" />
-          <h1 className="font-serif text-xl">AI 크롤러</h1>
+          <h1 className="font-serif text-xl">관리자 데이터 관리</h1>
           <Badge variant="secondary" className="ml-auto text-xs">관리자</Badge>
         </div>
       </header>
@@ -401,11 +401,11 @@ const Admin = () => {
         <section className="space-y-2">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="font-serif text-2xl">URL → AI 자동 추출 → DB 저장</h2>
+            <h2 className="font-serif text-2xl">URL 기반 바 정보 입력 보조</h2>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            바 정보가 담긴 웹페이지 URL을 넣으면 <b>Firecrawl</b>이 본문을 가져오고,
-            <b> Lovable AI(Gemini 2.5 Flash)</b>가 한국어로 구조화 데이터를 추출해서 자동으로 DB에 추가합니다.
+            바 정보가 담긴 페이지를 참고해 기본 정보를 빠르게 채우고,
+            최종 데이터는 관리자가 확인한 뒤 Supabase에 저장합니다.
           </p>
         </section>
 
@@ -425,12 +425,12 @@ const Admin = () => {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    크롤 중
+                    불러오는 중
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    크롤 시작
+                    입력 보조
                   </>
                 )}
               </Button>
@@ -453,7 +453,7 @@ const Admin = () => {
           {loading && (
             <div className="text-sm text-muted-foreground flex items-center gap-2 pt-2 border-t border-border">
               <Loader2 className="w-4 h-4 animate-spin" />
-              페이지 스크랩 → AI 분석 → 저장 중 (보통 10~20초)
+              페이지 내용 확인 → 정보 정리 → 저장 준비 중
             </div>
           )}
 
@@ -473,7 +473,7 @@ const Admin = () => {
             <Badge variant="outline" className="ml-auto text-xs">실제 DB</Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Firecrawl/AI 키가 없어도 직접 입력한 바 정보를 <code>bars</code>, <code>bar_tags</code> 테이블에 저장합니다.
+            직접 입력한 바 정보를 <code>bars</code>, <code>bar_tags</code> 테이블에 저장합니다.
             실제 Supabase 로그인 세션이 필요합니다.
           </p>
           {isDemo && (
@@ -582,15 +582,15 @@ const Admin = () => {
           </div>
         </Card>
 
-        {/* Seoul Bulk Crawl */}
+        {/* Seoul Bulk Import */}
         <Card className="p-6 space-y-4 bg-gradient-to-br from-primary/10 to-card/60 border-primary/30">
           <div className="flex items-start gap-3">
             <MapPin className="w-6 h-6 text-primary mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-serif text-lg">🍶 서울 바 자동 수집</h3>
+              <h3 className="font-serif text-lg">서울 바 데이터 일괄 입력</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Firecrawl Search로 다이닝코드·망고플레이트에서 서울 바를 검색하고,
-                각 페이지를 스크랩 → AI가 서울 주소만 필터링해서 DB에 자동 저장합니다.
+                서울 지역 바 후보를 기준으로 지역, 카테고리, 분위기 태그를 정리해
+                운영 데이터로 활용할 수 있게 저장합니다.
               </p>
             </div>
           </div>
@@ -603,12 +603,12 @@ const Admin = () => {
             {bulkLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                서울 바 수집 중...
+                서울 바 데이터 준비 중...
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4 mr-2" />
-                서울 바 일괄 크롤 시작 (최대 12곳)
+                서울 바 일괄 입력 시작 (최대 12곳)
               </>
             )}
           </Button>
@@ -657,11 +657,11 @@ const Admin = () => {
 
         {/* How it works */}
         <Card className="p-5 bg-muted/30 border-border space-y-2">
-          <h3 className="font-medium text-sm">동작 원리</h3>
+          <h3 className="font-medium text-sm">데이터 활용 흐름</h3>
           <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
-            <li><b>Firecrawl</b>로 입력 URL의 본문을 markdown 형태로 스크랩</li>
-            <li><b>Gemini 2.5 Flash</b>에 function calling으로 구조화 추출 요청 (이름·지역·카테고리·태그·혼술/조용함 점수·요약)</li>
-            <li>추출된 JSON을 <code className="text-primary">bars</code>, <code className="text-primary">bar_tags</code> 테이블에 자동 insert</li>
+            <li>관리자가 바 이름·지역·카테고리·태그·점수·요약 정보를 확인</li>
+            <li>정리된 데이터를 <code className="text-primary">bars</code>, <code className="text-primary">bar_tags</code> 테이블에 저장</li>
+            <li>리뷰와 프로필 데이터는 서비스 이용 과정에서 Supabase에 누적</li>
             <li>탐색 페이지·AI 추천·네트워킹 매칭에서 즉시 활용</li>
           </ol>
         </Card>

@@ -229,7 +229,7 @@ const MyPage = () => {
           )}
         </section>
 
-        {/* Admin: AI Crawler */}
+        {/* Admin: data manager */}
         <Link
           to="/admin"
           className="block bg-gradient-card rounded-xl p-4 border border-border hover:border-primary/40 transition-colors"
@@ -237,8 +237,8 @@ const MyPage = () => {
           <div className="flex items-center gap-3">
             <Sparkles className="w-5 h-5 text-primary" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">AI 바 크롤러</p>
-              <p className="text-xs text-muted-foreground">URL 한 줄로 새 바 자동 등록</p>
+              <p className="text-sm font-medium text-foreground">관리자 데이터 관리</p>
+              <p className="text-xs text-muted-foreground">바 정보 등록·수정·삭제</p>
             </div>
             <span className="text-xs text-primary">→</span>
           </div>

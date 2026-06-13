@@ -29,14 +29,14 @@ describe("auth messages", () => {
 describe("profile payload", () => {
   it("uses explicit signup form values first", () => {
     const payload = createProfileInsertPayload(makeUser(), {
-      nickname: "코덱스",
+      nickname: "퇴근러",
       ageRange: "30대 초반",
       jobGroup: "IT/개발",
     });
 
     expect(payload).toMatchObject({
       user_id: "user-1",
-      nickname: "코덱스",
+      nickname: "퇴근러",
       age_range: "30대 초반",
       job_group: "IT/개발",
     });
