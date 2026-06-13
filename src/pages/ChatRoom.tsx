@@ -27,6 +27,13 @@ interface RoomInfo {
   user2_id: string;
 }
 
+const QUICK_REPLIES = [
+  "오늘은 조용한 곳이 좋아요",
+  "지역은 어디가 편하세요?",
+  "가볍게 한 잔만 할까요?",
+  "첫 잔은 하이볼 어때요?",
+];
+
 const ChatRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
@@ -188,10 +195,13 @@ const ChatRoom = () => {
 
   const appendLocalBotReply = (content: string) => {
     const senderId = otherUserId || room?.user2_id || "local-chatbot";
+    const recentReplies = messages
+      .filter((message) => message.sender_id !== currentUserId)
+      .map((message) => message.content);
     const reply: Message = {
       id: `local-chatbot-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       sender_id: senderId,
-      content: buildLocalChatReply(content, otherNickname || "상대"),
+      content: buildLocalChatReply(content, otherNickname || "상대", { recentReplies }),
       created_at: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, reply]);
@@ -215,7 +225,11 @@ const ChatRoom = () => {
         const reply = addDemoMessage(
           room,
           otherUserId || room.user2_id,
-          buildLocalChatReply(content, otherNickname || "상대")
+          buildLocalChatReply(content, otherNickname || "상대", {
+            recentReplies: messages
+              .filter((message) => message.sender_id !== currentUserId)
+              .map((message) => message.content),
+          })
         ) as Message;
         setMessages((prev) => [...prev, reply]);
         setBotTyping(false);
@@ -373,7 +387,7 @@ const ChatRoom = () => {
         <div className="space-y-3">
           {messages.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground">대화를 시작해보세요 🍻</p>
+              <p className="text-sm text-muted-foreground">대화를 시작해보세요</p>
               <p className="text-xs text-muted-foreground mt-1">가볍게 인사부터!</p>
             </div>
           )}
@@ -420,7 +434,24 @@ const ChatRoom = () => {
               <p className="text-xs text-muted-foreground mt-0.5">새로운 대화를 시작해보세요</p>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <>
+              <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
+                {QUICK_REPLIES.map((reply) => (
+                  <button
+                    key={reply}
+                    type="button"
+                    onClick={() => {
+                      setNewMessage(reply);
+                      window.setTimeout(() => inputRef.current?.focus(), 0);
+                    }}
+                    className="shrink-0 rounded-full border border-primary/20 bg-secondary px-3 py-1.5 text-[11px] text-secondary-foreground transition-colors hover:border-primary/50 hover:bg-primary/10"
+                    disabled={sending}
+                  >
+                    {reply}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -439,7 +470,8 @@ const ChatRoom = () => {
               >
                 <Send className="w-4 h-4" />
               </Button>
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>
