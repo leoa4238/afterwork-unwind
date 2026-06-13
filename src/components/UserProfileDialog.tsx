@@ -114,14 +114,14 @@ const UserProfileDialog = ({
           <div className="rounded-lg border border-border bg-muted/30 p-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
               <CalendarDays className="w-3.5 h-3.5" />
-              네트워킹 상태
+              대화 상태
             </div>
             <div className="flex flex-wrap gap-1.5">
               <Badge variant="secondary" className="border-0">
-                {profile.available_now === false ? "지금은 대화 어려움" : "지금 대화 가능"}
+                {profile.available_now === false ? "대화 쉬는 중" : "대화 요청 가능"}
               </Badge>
               <Badge variant="outline" className="border-primary/30 text-primary">
-                바 기반 네트워킹
+                프로필 공개 중
               </Badge>
             </div>
           </div>

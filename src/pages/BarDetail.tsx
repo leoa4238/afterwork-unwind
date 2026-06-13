@@ -184,8 +184,8 @@ const BarDetail = () => {
                   <Users className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">이곳에서 대화 가능한 직장인 보기</p>
-                  <p className="text-xs text-muted-foreground">가볍게 대화하고 싶을 때만</p>
+                  <p className="text-sm font-medium text-foreground">오늘 대화 요청 가능한 사람 보기</p>
+                  <p className="text-xs text-muted-foreground">프로필을 확인한 뒤 1:1 대화를 시작합니다</p>
                 </div>
               </div>
             </div>

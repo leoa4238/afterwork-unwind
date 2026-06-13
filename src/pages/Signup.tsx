@@ -152,7 +152,7 @@ const Signup = () => {
 
           <div className="bg-muted/50 rounded-xl p-3 border border-border">
             <p className="text-xs text-muted-foreground">
-              ℹ️ 네트워킹 기능은 기본 OFF로 설정됩니다. 마이페이지에서 언제든 변경할 수 있어요.
+              ℹ️ 네트워킹 프로필은 기본 비공개로 설정됩니다. 마이페이지에서 언제든 공개할 수 있어요.
             </p>
           </div>
 

@@ -132,20 +132,20 @@ const MyPage = () => {
   const toggleNetworkingDefault = async (on: boolean) => {
     if (!user) return;
     if (isDemo) {
-      toast.success(on ? "데모 네트워킹 기본값 ON" : "데모 네트워킹 기본값 OFF");
+      toast.success(on ? "체험 프로필을 네트워킹 목록에 공개했어요" : "체험 프로필을 비공개로 바꿨어요");
       return;
     }
-    await supabase.from("profiles").update({ networking_enabled: on }).eq("user_id", user.id);
+    await supabase.from("profiles").update({ networking_enabled: on, available_now: on ? profile?.available_now ?? true : false }).eq("user_id", user.id);
     refreshProfile();
   };
 
   const toggleAvailableNow = async (on: boolean) => {
     if (!user) return;
     if (isDemo) {
-      toast.success(on ? "체험 프로필을 대화 가능으로 표시했어요" : "체험 프로필을 대화 쉬는 중으로 표시했어요");
+      toast.success(on ? "체험 프로필이 대화 요청을 받을 수 있어요" : "체험 프로필이 대화 요청을 받지 않도록 바뀌었어요");
       return;
     }
-    await supabase.from("profiles").update({ available_now: on }).eq("user_id", user.id);
+    await supabase.from("profiles").update({ available_now: on, networking_enabled: on ? true : profile?.networking_enabled ?? false }).eq("user_id", user.id);
     refreshProfile();
   };
 
@@ -323,14 +323,14 @@ const MyPage = () => {
           </Button>
         </section>
 
-        {/* Networking default */}
+        {/* Networking visibility */}
         <div className="bg-gradient-card rounded-xl p-4 border border-border space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Wine className="w-5 h-5 text-primary" />
               <div>
-                <p className="text-sm font-medium text-foreground">네트워킹 기본값</p>
-                <p className="text-xs text-muted-foreground">접속 시 네트워킹 자동 ON/OFF</p>
+                <p className="text-sm font-medium text-foreground">네트워킹 프로필 공개</p>
+                <p className="text-xs text-muted-foreground">켜면 다른 사용자에게 내 프로필이 보입니다</p>
               </div>
             </div>
             <Switch checked={profile?.networking_enabled ?? false} onCheckedChange={toggleNetworkingDefault} />
@@ -339,8 +339,8 @@ const MyPage = () => {
             <div className="flex items-center gap-3">
               <MessageCircle className="w-5 h-5 text-primary" />
               <div>
-                <p className="text-sm font-medium text-foreground">지금 대화 가능</p>
-                <p className="text-xs text-muted-foreground">켜두면 네트워킹 목록에 노출됩니다</p>
+                <p className="text-sm font-medium text-foreground">대화 요청 받기</p>
+                <p className="text-xs text-muted-foreground">켜면 다른 사용자가 나에게 1:1 대화를 요청할 수 있습니다</p>
               </div>
             </div>
             <Switch checked={profile?.available_now ?? false} onCheckedChange={toggleAvailableNow} />

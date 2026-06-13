@@ -69,7 +69,7 @@ const BarCard = ({ bar, aiMatch }: BarCardProps) => {
             )}
             {bar.networkingFriendly && (
               <Badge className="bg-primary/90 border-0 text-primary-foreground text-xs">
-                대화 가능
+                사람 연결
               </Badge>
             )}
           </div>

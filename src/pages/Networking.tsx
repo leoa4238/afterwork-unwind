@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, MessageCircle, Shield, MapPin, Sparkles, Loader2, UserRound } from "lucide-react";
+import { Users, MessageCircle, Shield, MapPin, Sparkles, Loader2, UserRound, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -121,7 +121,7 @@ const Networking = () => {
               <h1 className="text-lg font-serif font-bold text-foreground">네트워킹</h1>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">{networkingOn ? "ON" : "OFF"}</span>
+              <span className="text-xs text-muted-foreground">{networkingOn ? "참여 중" : "비공개"}</span>
               <Switch checked={networkingOn} onCheckedChange={toggleNetworking} />
               <NotificationBell />
             </div>
@@ -135,13 +135,24 @@ const Networking = () => {
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">네트워킹이 꺼져 있어요</h2>
-            <p className="text-sm text-muted-foreground mb-1">혼자 조용히 즐기고 싶다면 그대로 두세요.</p>
-            <p className="text-sm text-muted-foreground mb-6">가볍게 대화하고 싶을 때만 켜면 됩니다.</p>
-            <Button variant="outline" onClick={() => toggleNetworking(true)}>네트워킹 켜기</Button>
+            <h2 className="text-lg font-semibold text-foreground mb-2">내 프로필이 비공개 상태예요</h2>
+            <p className="text-sm text-muted-foreground mb-1">켜면 다른 사용자에게 내 프로필이 보이고</p>
+            <p className="text-sm text-muted-foreground mb-6">오늘 대화 요청을 주고받을 수 있습니다.</p>
+            <Button variant="outline" onClick={() => toggleNetworking(true)}>오늘 네트워킹 참여하기</Button>
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-3">
+              <div className="flex items-start gap-2">
+                <Eye className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">내 프로필 공개 중</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    다른 사용자에게 내가 오늘 대화 요청을 받을 수 있는 사람으로 표시됩니다.
+                  </p>
+                </div>
+              </div>
+            </div>
             <div className="bg-muted/50 rounded-xl p-3 border border-border flex items-start gap-2">
               <Shield className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground leading-relaxed">
@@ -158,9 +169,19 @@ const Networking = () => {
                 <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                   {Object.keys(aiMatches).length > 0 ? (
                     <><Sparkles className="w-3.5 h-3.5 text-primary" /> AI 매칭 결과</>
-                  ) : "가볍게 대화 가능한 근처 직장인"}
+                  ) : "오늘 대화 요청 가능한 사람"}
                   <span className="ml-1 text-primary">{orderedUsers.length}</span>
                 </h2>
+
+                {orderedUsers.length === 0 && (
+                  <div className="rounded-xl border border-border bg-gradient-card p-6 text-center">
+                    <Users className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm font-medium text-foreground">지금 대화 요청 가능한 사람이 없어요</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      내 프로필은 공개 중입니다. 다른 사용자가 참여하면 이 목록에 표시됩니다.
+                    </p>
+                  </div>
+                )}
 
                 {orderedUsers.map((u, i) => {
                   const m = aiMatches[u.id];
@@ -200,7 +221,7 @@ const Networking = () => {
                                 <div className="min-w-0">
                                   <h3 className="font-semibold text-foreground truncate">{u.nickname}</h3>
                                   <p className="text-xs text-muted-foreground truncate">{jobGroup} · {ageRange}</p>
-                                  <p className="text-[11px] text-primary mt-0.5">프로필 보기</p>
+                                  <p className="text-[11px] text-primary mt-0.5">대화 요청 가능 · 프로필 보기</p>
                                 </div>
                               </button>
                             }

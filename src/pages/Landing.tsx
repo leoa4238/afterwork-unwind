@@ -88,7 +88,7 @@ const Landing = () => {
               </div>
               <h3 className="font-semibold text-foreground mb-2">선택형 네트워킹</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                원할 때만 켜세요. 같은 지역의 직장인과 가볍게 대화할 수 있습니다. 기본은 항상 OFF.
+                원할 때만 프로필을 공개하고, 오늘 대화 요청을 받을 사람들과 1:1로 연결됩니다. 기본은 항상 비공개입니다.
               </p>
             </div>
 
