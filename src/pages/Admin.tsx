@@ -36,8 +36,8 @@ interface ManualBar {
 }
 
 const PRESETS = [
-  { label: "다이닝코드 예시", url: "https://www.diningcode.com/profile.php?rid=2gC60O3eFn5K" },
-  { label: "망고플레이트 예시", url: "https://www.mangoplate.com/restaurants/CJUjUQwcCQ" },
+  { label: "강남 바 후보", url: "https://example.com/afterwork/gangnam-bar" },
+  { label: "성수 바 후보", url: "https://example.com/afterwork/seongsu-bar" },
 ];
 
 const LOCAL_CRAWL_SEEDS = [
@@ -304,7 +304,7 @@ const Admin = () => {
   const handleCrawl = async (targetUrl?: string) => {
     const u = (targetUrl ?? url).trim();
     if (!u) {
-      toast.error("URL을 입력하세요");
+      toast.error("참고 링크를 입력하세요");
       return;
     }
     setLoading(true);
@@ -401,10 +401,10 @@ const Admin = () => {
         <section className="space-y-2">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="font-serif text-2xl">URL 기반 바 정보 입력 보조</h2>
+            <h2 className="font-serif text-2xl">바 정보 초안 만들기</h2>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            바 정보가 담긴 페이지를 참고해 기본 정보를 빠르게 채우고,
+            입력한 참고 링크를 바탕으로 기본 정보를 빠르게 채우고,
             최종 데이터는 관리자가 확인한 뒤 Supabase에 저장합니다.
           </p>
         </section>
@@ -412,12 +412,12 @@ const Admin = () => {
         {/* Input */}
         <Card className="p-6 space-y-4 bg-card/60 border-border">
           <div className="space-y-2">
-            <label className="text-sm font-medium">바 페이지 URL</label>
+            <label className="text-sm font-medium">참고 링크</label>
             <div className="flex gap-2">
               <Input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.diningcode.com/profile.php?rid=..."
+                placeholder="https://example.com/afterwork/bar-page"
                 disabled={loading}
                 onKeyDown={(e) => e.key === "Enter" && handleCrawl()}
               />
@@ -453,7 +453,7 @@ const Admin = () => {
           {loading && (
             <div className="text-sm text-muted-foreground flex items-center gap-2 pt-2 border-t border-border">
               <Loader2 className="w-4 h-4 animate-spin" />
-              페이지 내용 확인 → 정보 정리 → 저장 준비 중
+              참고 내용 확인 → 정보 정리 → 저장 준비 중
             </div>
           )}
 
@@ -469,7 +469,7 @@ const Admin = () => {
         <Card className="p-6 space-y-4 bg-card/60 border-border">
           <div className="flex items-center gap-2">
             <Wine className="w-5 h-5 text-primary" />
-            <h2 className="font-serif text-xl">Supabase 수동 바 등록 CRUD</h2>
+            <h2 className="font-serif text-xl">Supabase 바 데이터 관리</h2>
             <Badge variant="outline" className="ml-auto text-xs">실제 DB</Badge>
           </div>
           <p className="text-xs text-muted-foreground">
